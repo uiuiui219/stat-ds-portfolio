@@ -1,0 +1,380 @@
+---
+title: "Cluster analysis II"
+author: "Woenwoei"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r library, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(imager)
+# generate data
+library(mvtnorm)
+# Clustering Algorithm
+library(e1071)
+library(mclust)
+# CVI
+library(UniversalCVI)
+library(BayesCVI)
+```
+
+```{r data for clustering, echo=TRUE}
+
+help(package = "UniversalCVI")
+d1 = D1_data
+
+ggplot(d1,aes(x,y))+
+  geom_point(size=2,shape = 16,col=d1$label) +
+  ggtitle("6 groups")
+
+d2 = R1_data
+d2plot = ggplot(d2,aes(x,y))+
+  geom_point(size=2,shape = 16,col=d2$label)+
+  ggtitle("9 groups or 3 groups")
+d2plot
+
+d3 = R7_data
+ggplot(d3,aes(x,y))+
+  geom_point(size=2,shape = 16,col=d3$label)+
+  ggtitle("3 groups or 9 groups")
+
+
+```
+
+
+```{r check algorithm,echo = TRUE}
+# Method1: using function AccClust in UniversalCVI
+
+?AccClust
+
+d1 %>% head()
+
+AccClust(d1, label.names = "label",algorithm = c("Kmeans","FCM","EM"), fzm = 2,
+  scale = TRUE, nstart = 20,iter = 100)
+
+AccClust(d2, label.names = "label",algorithm = c("Kmeans","FCM","EM"), fzm = 2,
+  scale = TRUE, nstart = 20,iter = 100)
+
+AccClust(d3, label.names = "label",algorithm = c("Kmeans","FCM","EM"), fzm = 2,
+  scale = TRUE, nstart = 20,iter = 100)
+
+
+# Method2: Using plot 
+dat.check = d2
+
+colnames(dat.check) = c("x","y","label")
+n.clust= length(unique(dat.check[,3]))
+
+# Using kmeans
+?kmeans
+kmean_check = kmeans(dat.check[,-3],centers = n.clust, iter.max = 100, nstart = 100)
+
+re.clust = kmean_check$cluster
+re.cen = kmean_check$centers
+cplot = ggplot(data.frame(dat.check),aes(x,y))+
+  geom_point(size=2,shape = 16,col=re.clust)+
+  geom_point(size = 2,shape = 19,data = as.data.frame(re.cen), aes(x = x, y = y), color = "yellow")+
+  ggtitle("Result from clustering with k = 9")
+
+ggarrange(d2plot,cplot)
+
+
+cure = read.csv("cure-t0-2000n-2D.csv",header = FALSE)
+cure %>% head()
+hc.single=hclust(dist(cure[,-3]), method="complete")
+sing3 = cutree(hc.single, 3)
+sing3
+
+ggplot(data.frame(cure),aes(V1,V2))+
+  geom_point(size=2,shape = 16,col=sing3)+
+  ggtitle("Result from clustering with k = 3")
+
+
+
+
+
+```
+
+
+```{r select number of cluster, echo = TRUE}
+
+# Use cluster validity index from function UniversalCVI
+
+d2plot
+d2 %>% head(2)
+plot(scale(d2[,-3]))
+
+help(package = UniversalCVI)
+
+?Hvalid
+
+re.cvi = Hvalid(scale(d2[,-3]), kmax = 15, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"), method = "kmeans", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+re.cvi
+plot_idx(re.cvi)
+d2plot
+
+plot(R4_data[,-3])
+
+re.cvi = Hvalid(scale(R4_data[,-3]), kmax = 10, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"), method = "kmeans", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+plot_idx(re.cvi)
+
+
+```
+
+```{r CVI with realworld data, echo= TRUE}
+
+seed = read.csv("seed.csv",header = F)
+dim(seed)
+seed %>% colnames()
+seed %>% head(2)
+seed[,ncol(seed)] %>% unique()
+
+
+# check acc 
+
+AccClust(seed, label.names = "V8",algorithm = "Kmeans", fzm = 2,
+  scale = TRUE, nstart = 20,iter = 100)
+
+# CVI
+re.cvi = Hvalid(seed[,-ncol(seed)], kmax = 10, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "STR"), method = "kmeans", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+plot_idx(re.cvi)
+
+
+
+```
+
+
+
+```{r MRI dataset,echo=TRUE}
+
+# Function defined----
+plotTheme <- function() {
+  theme(
+    panel.background = element_rect(
+      linewidth = 3,
+      colour = "black",
+      fill = "white"),
+    axis.ticks = element_line(
+      linewidth = 2),
+    panel.grid.major = element_line(
+      colour = "gray80",
+      linetype = "dotted"),
+    panel.grid.minor = element_line(
+      colour = "gray90",
+      linetype = "dashed"),
+    axis.title.x = element_text(
+      #linewidth = rel(1.2),
+      face = "bold"),
+    axis.title.y = element_text(
+      #linewidth = rel(1.2),
+      face = "bold"),
+    plot.title = element_text(
+      #linewidth = 20,
+      face = "bold",
+      vjust = 1.5)
+  )
+}
+
+x = "https://storage.googleapis.com/kagglesdsdata/datasets/165566/377107/no/9%20no.jpg?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=databundle-worker-v2%40kaggle-161607.iam.gserviceaccount.com%2F20250323%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20250323T012222Z&X-Goog-Expires=345600&X-Goog-SignedHeaders=host&X-Goog-Signature=533650df28ddc4336692e20fe9567961d8f00d4e31d12f8919dd85d263193784b41f2ac3a8b3e152eb19b177e36413b979c7cbd138b1d7db30cc219e66d5daa03a7b21c2548ab0f7d7b234fae2898399a9fb878181ae44ddb8be47aaec7be2ec649a19715cb3c8e8d54574485c888725a936c5344acda71fc9cf8f7630344c7329eec4c8f7c1ae81854efb7b51e901156531396e84dd76d3104b3199f067d9088c311e5038e9e1c0d9634b51ec10b33780193c01e311a29b7de66ce6737ce7f9795feada416dc1e58463a0f289805de6a26e26f19c997e475a816084c30d0efc9bc028e8e2ba98142dc33648deb350fd4698207ce66257c77ce35473e24b4d00"
+download.file(x,'y.jpg', mode = 'wb')
+
+IMG1 <- load.image("y.jpg")
+
+IMG.dat = data.frame()
+
+IMG.dat[1,"NAME"] = paste0("IMG",1)
+IMG.dat[1,"DIM1"] = dim(IMG1)[1]
+IMG.dat[1,"DIM2"] = dim(IMG1)[2]
+IMG.dat[1,"DIM3"] = dim(IMG1)[3]
+
+# convert to RGB
+
+img.rgb = data.frame(
+  x = rep(1:IMG.dat[1,"DIM2"], each = IMG.dat[1,"DIM1"]),
+  y = rep(IMG.dat[1,"DIM1"]:1, IMG.dat[1,"DIM2"]),
+  R = as.vector(IMG1[,,1]),
+  G = as.vector(IMG1[,,2]),
+  B = as.vector(IMG1[,,3]))
+
+img.rgb
+
+ggplot(data = img.rgb, aes(x = x, y = y)) +
+  geom_point(colour = rgb(img.rgb[c("R", "G", "B")])) +
+  labs(title = "Original Image") +
+  xlab("x") +
+  ylab("y") +
+  plotTheme()
+
+
+
+# check main algorithm
+c = 2
+c.img = kmeans(img.rgb[, c("R", "G", "B")],center = c, iter.max = 100,nstart =20)
+
+
+chg.col = c("#DC0000","#26C6DA","#FFA000","#9B6BF2","#A50E82")
+kColours <- rgb(c.img$centers[c.img$cluster,])
+col = kColours %>% unique()
+ncolor = kColours %>% unique() %>% length()
+
+for(j in 1:ncolor){
+  kColours[kColours==col[j]] =  chg.col[j]
+}
+
+# Plot for clustering algorithm
+test.group = ggplot(data = img.rgb, aes(x = x, y = y)) +
+  geom_point(colour = kColours) +
+  labs(title = paste("K-Means Clustering of", c, "Colours")) +
+  xlab("x") +
+  ylab("y") +
+  plotTheme()
+test.group
+
+
+# sample plot 
+sample = sample(dim(img.rgb)[1],floor(0.5*dim(img.rgb)[1]),replace = FALSE)
+
+
+sam.plot = img.rgb[sample,]
+ggplot(data = sam.plot, aes(x = x, y = y)) +
+  geom_point(colour = rgb(sam.plot[c("R", "G", "B")])) +
+  labs(title = paste("Sample plot")) +
+  xlab("x") +
+  ylab("y") +
+  plotTheme()
+
+
+# Apply CVI
+
+re.cvi = Wvalid(img.rgb[,c("R","G","B")], kmax = 5, kmin = 2, method = "kmeans",
+  corr = "pearson", nstart = 100, sampling = 0.3, NCstart = TRUE)
+plot_idx(re.cvi)
+
+
+
+
+```
+
+```{r BayesCVI, echo = TRUE}
+
+help(package = "BayesCVI")
+
+
+data = B7_data[,1:2]
+plot(data)
+
+# alpha
+aalpha = c(20,20,20,5,5,5,0.5,0.5,0.5)
+
+B.WP = B_WP.IDX(x = scale(data), kmax = 10, corr = "pearson", method = "FCM",
+                fzm = 2, sampling = 1, iter = 100, nstart = 20, NCstart = TRUE,
+                alpha = aalpha, mult.alpha = 1/2)
+
+B.WP$Index %>% slice_max(WP)
+
+B.WP$BCVI %>% slice_max(BCVI)
+
+
+# plot the BCVI
+pplot = plot_BCVI(B.WP)
+pplot
+
+
+# Apply with MRI data [9 no]
+
+x = "https://storage.googleapis.com/kagglesdsdata/datasets/165566/377107/no/9%20no.jpg?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=databundle-worker-v2%40kaggle-161607.iam.gserviceaccount.com%2F20250323%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20250323T012222Z&X-Goog-Expires=345600&X-Goog-SignedHeaders=host&X-Goog-Signature=533650df28ddc4336692e20fe9567961d8f00d4e31d12f8919dd85d263193784b41f2ac3a8b3e152eb19b177e36413b979c7cbd138b1d7db30cc219e66d5daa03a7b21c2548ab0f7d7b234fae2898399a9fb878181ae44ddb8be47aaec7be2ec649a19715cb3c8e8d54574485c888725a936c5344acda71fc9cf8f7630344c7329eec4c8f7c1ae81854efb7b51e901156531396e84dd76d3104b3199f067d9088c311e5038e9e1c0d9634b51ec10b33780193c01e311a29b7de66ce6737ce7f9795feada416dc1e58463a0f289805de6a26e26f19c997e475a816084c30d0efc9bc028e8e2ba98142dc33648deb350fd4698207ce66257c77ce35473e24b4d00"
+download.file(x,'y.jpg', mode = 'wb')
+
+IMG1 <- load.image("y.jpg")
+
+IMG.dat = data.frame()
+
+IMG.dat[1,"NAME"] = paste0("IMG",1)
+IMG.dat[1,"DIM1"] = dim(IMG1)[1]
+IMG.dat[1,"DIM2"] = dim(IMG1)[2]
+IMG.dat[1,"DIM3"] = dim(IMG1)[3]
+
+# convert to RGB
+
+img.rgb = data.frame(
+  x = rep(1:IMG.dat[1,"DIM2"], each = IMG.dat[1,"DIM1"]),
+  y = rep(IMG.dat[1,"DIM1"]:1, IMG.dat[1,"DIM2"]),
+  R = as.vector(IMG1[,,1]),
+  G = as.vector(IMG1[,,2]),
+  B = as.vector(IMG1[,,3]))
+
+IMG1.RGB = img.rgb
+
+ggplot(data = img.rgb, aes(x = x, y = y)) +
+  geom_point(colour = rgb(img.rgb[c("R", "G", "B")])) +
+  labs(title = "Original Image") +
+  xlab("x") +
+  ylab("y") +
+  plotTheme()
+
+aalpha = c(25,25,2,2,0.5,0.5,0.5)
+
+# use sampling in function to reduce MRI image size
+
+WP.MRI = B_WP.IDX(x = IMG1.RGB[, c("R", "G", "B")], kmax = 8, corr = "pearson", method = "FCM",
+                  fzm = 2, sampling = 0.3, iter = 100, nstart = 20, NCstart = TRUE, alpha = aalpha, mult.alpha = 1/2)
+
+
+pp = plot_BCVI(WP.MRI)
+pp$plot_index
+pp$plot_BCVI
+pp$error_bar_plot
+
+
+```
+
+
+
+
+```{r}
+iris %>% head()
+
+iris$Species = iris$Species %>% as.character()
+
+
+AccClust(iris, label.names = "Species",algorithm = c("Kmeans","FCM","EM"), fzm = 2,
+  scale = TRUE, nstart = 20,iter = 100)
+
+x = iris
+x[2,]
+label.names = "Species"
+
+iris[1,]
+x$Species = x$Species %>% as.numeric()
+x$Species[x$Species==1]=100
+
+x[,label.names] = as.numeric(as.factor(x[,label.names]))
+
+
+
+x$Species = x$Species %>% as.numeric()
+x$Species = x$Species %>% as.factor()
+
+
+
+
+x[,5]
+
+str(iris)
+x = tibble(iris)
+ wd = 100000
+  x = data.frame(x)
+  # order label
+  if (!all(unique(x[,label.names]) %in% seq(length(unique(x[,label.names]))))){
+    s = 1
+    for (i in unique(x[,label.names])) {
+      x[,label.names][x[,label.names]==i] = s
+      s = s+1
+    }
+  }
+
+```
+
+

@@ -1,0 +1,24 @@
+# R session files
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# Office temp files
+~$*
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Large raw datasets — download sources are documented in each README
+*.parquet
+**/accident.zip
+**/lap_times.csv
+**/transaction_data.csv
+**/mnist/
+**/cifar-100-binary/
+**/imdb/
+**/Excel-4*.xlsx
+**/OneDrive_*.zip
+**/stat for datascience in R book.pdf

@@ -1,0 +1,197 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-10-03"
+---
+
+```{r}
+library(foreign)
+library(e1071)
+library(mclust)
+library(BayesCVI)
+library(UniversalCVI)
+library(dbscan)
+```
+
+```{r include=FALSE}
+dat1 <- read.arff("data_set_1.arff")
+
+# Pair plot
+pairs(dat1, col = dat1$class, main = "Pair Plot: True Class Labels")
+
+# ---------------- K-Means ----------------
+dat1_km_cvi <- Hvalid(scale(dat1[,1:2]), 10, indexlist = "all", method = "kmeans")
+plot_idx(dat1_km_cvi)
+
+dat1_km <- kmeans(scale(dat1[,1:2]), centers = 10)
+
+par(mfrow = c(1,2))
+plot(dat1[,1:2], col = dat1$class, main = "True Class Labels")
+plot(dat1[,1:2], col = dat1_km$cluster, main = "K-Means Clustering (k = 10)")
+table(dat1_km$cluster - 1, dat1$class)
+
+# ---------------- Hierarchical ----------------
+dat1_com <- hclust(dist(scale(dat1[,1:2])), method = "complete")
+dat1_avg <- hclust(dist(scale(dat1[,1:2])), method = "single")
+dat1_sin <- hclust(dist(scale(dat1[,1:2])), method = "average")
+
+par(mfrow = c(1,3))
+plot(dat1[,1:2], col = cutree(dat1_com, 3), main = "Hierarchical: Complete Linkage (k = 3)")
+plot(dat1[,1:2], col = cutree(dat1_avg, 3), main = "Hierarchical: Single Linkage (k = 3)")
+plot(dat1[,1:2], col = cutree(dat1_sin, 3), main = "Hierarchical: Average Linkage (k = 3)")
+
+# ---------------- Fuzzy C-Means ----------------
+dat1_fz_cvi <- FzzyCVIs(dat1[,1:2], 10, indexlist = c('WP', 'PBM'), method = 'FCM', )
+plot_idx(dat1_fz_cvi)
+
+dat1_fz <- cmeans(scale(dat1[,1:2]), centers = 10)
+
+par(mfrow = c(1,2))
+plot(dat1[,1:2], col = dat1$class, main = "True Class Labels")
+plot(dat1[,1:2], col = dat1_fz$cluster, main = "Fuzzy C-Means Clustering (k = 10)")
+table(dat1_fz$cluster - 1, dat1$class)
+
+# ---------------- DBSCAN ----------------
+kNNdistplot(scale(dat1[,1:2]), k = 4)
+eps <- 0.3
+minpts <- 100
+dat1_dbc <- dbscan(scale(dat1[,1:2]), eps = eps, minPts = minpts)
+
+plot(dat1[,1:2], col = dat1_dbc$cluster + 1, main = "DBSCAN Clustering")
+
+# ---------------- EM (Gaussian Mixture Model) ----------------
+dat1_EM <- Mclust(dat1[,1:2])
+
+par(mfrow = c(1,2))
+plot(dat1[,1:2], col = dat1$class, main = "True Class Labels")
+plot(dat1[,1:2], col = dat1_EM$classification, main = "EM Clustering (GMM)")
+
+# ---------------- Accuracy Comparison ----------------
+acc <- AccClust(dat1, label = "class", algorithm = c("FCM", "EM", "Kmeans"), nstart = 20, fzm = 10)
+
+acc
+```
+
+### data 1 (10 class)  
+
+### cluster บังคับเลือก 10 กลุ่ม 
+
+ได้ผลว่า EM สามารถแบ่งกลุ่มข้อมูลได้ดีที่สุด ด้วย Accuracy = 54.7%
+
+```{r}
+par(mfrow = c(1,3))
+
+
+# True labels
+plot(dat1[,1:2], col = dat1$class, main = "True Class Labels")
+
+# DBSCAN
+plot(dat1[,1:2], col = dat1_dbc$cluster + 1, main = "DBSCAN Clustering")
+
+# EM (GMM)
+plot(dat1[,1:2], col = dat1_EM$classification, main = "EM Clustering (GMM)")
+
+# K-Means
+plot(dat1[,1:2], col = dat1_km$cluster, main = "K-Means Clustering (k = 10)")
+
+# Hierarchical: Complete Linkage
+plot(dat1[,1:2], col = cutree(dat1_com, 3), main = "Hierarchical: Complete Linkage (k = 3)")
+
+# Hierarchical: Single Linkage
+plot(dat1[,1:2], col = cutree(dat1_avg, 3), main = "Hierarchical: Single Linkage (k = 3)")
+
+# Hierarchical: Average Linkage
+plot(dat1[,1:2], col = cutree(dat1_sin, 3), main = "Hierarchical: Average Linkage (k = 3)")
+
+# Fuzzy C-Means
+plot(dat1[,1:2], col = dat1_fz$cluster, main = "Fuzzy C-Means Clustering (k = 10)")
+```
+
+# -------------------------
+
+```{r include=FALSE}
+dat2 <- read.arff("data_set_2.arff")
+
+# Pair plot
+pairs(dat2, col = dat2$CLASS, main = "Pair Plot: True Class Labels")
+
+# ---------------- K-Means ----------------
+dat2_km_cvi <- Hvalid(scale(dat2[,1:2]), 10, indexlist = "all", method = "kmeans")
+plot_idx(dat2_km_cvi)
+
+dat2_km <- kmeans(scale(dat2[,1:2]), centers = 4)
+
+par(mfrow = c(1,2))
+plot(dat2[,1:2], col = dat2$CLASS, main = "True Class Labels")
+plot(dat2[,1:2], col = dat2_km$cluster, main = "K-Means Clustering (k = 4)")
+table(dat2_km$cluster, dat2$CLASS)
+
+# ---------------- Hierarchical ----------------
+dat2_com <- hclust(dist(scale(dat2[,1:2])), method = "complete")
+dat2_avg <- hclust(dist(scale(dat2[,1:2])), method = "single")
+dat2_sin <- hclust(dist(scale(dat2[,1:2])), method = "average")
+
+par(mfrow = c(1,3))
+plot(dat2[,1:2], col = cutree(dat2_com, 2), main = "Hierarchical: Complete Linkage (k = 2)")
+plot(dat2[,1:2], col = cutree(dat2_avg, 2), main = "Hierarchical: Single Linkage (k = 2)")
+plot(dat2[,1:2], col = cutree(dat2_sin, 2), main = "Hierarchical: Average Linkage (k = 2)")
+
+# ---------------- Fuzzy C-Means ----------------
+dat2_fz_cvi <- FzzyCVIs(dat2[,1:2], 10, indexlist = c("WP", "PBM"), method = "FCM")
+plot_idx(dat2_fz_cvi)
+
+dat2_fz <- cmeans(scale(dat2[,1:2]), centers = 4)
+
+par(mfrow = c(1,2))
+plot(dat2[,1:2], col = dat2$CLASS, main = "True Class Labels")
+plot(dat2[,1:2], col = dat2_fz$cluster, main = "Fuzzy C-Means Clustering (k = 4)")
+table(dat2_fz$cluster, dat2$CLASS)
+
+# ---------------- DBSCAN ----------------
+kNNdistplot(scale(dat2[,1:2]), k = 4)
+eps <- 0.07
+minpts <- 4
+dat2_dbc <- dbscan(scale(dat2[,1:2]), eps = eps, minPts = minpts)
+
+par(mfrow = c(1,2))
+plot(dat2[,1:2], col = dat2$CLASS, main = "True Class Labels")
+plot(dat2[,1:2], col = dat2_dbc$cluster + 1, main = "DBSCAN Clustering")
+table(dat2_dbc$cluster, dat2$CLASS)
+
+# ---------------- EM (Gaussian Mixture Model) ----------------
+dat2_EM <- Mclust(dat2[,1:2])
+
+par(mfrow = c(1,2))
+plot(dat2[,1:2], col = dat2$CLASS, main = "True Class Labels")
+plot(dat2[,1:2], col = dat2_EM$classification, main = "EM Clustering (GMM)")
+table(dat2_EM$classification, dat2$CLASS)
+
+# ---------------- Accuracy Comparison ----------------
+dat2_acc <- AccClust(dat2, label = "CLASS", algorithm = c("FCM", "EM", "Kmeans"), nstart = 20, fzm = 4)
+print(dat2_acc)
+```
+
+### data 2 (4 class + "noise" class)  
+
+### cluster บังคับเลือก 4 กลุ่ม 
+
+ได้ผลว่า DBSCAN และ EM สามารถแยกกลุ่มได้อย่างชัดเจน (100% และ 99.7% ตามลำดับ)
+
+```{r}
+par(mfrow = c(1,3))
+
+plot(dat2[,1:2], col = dat2$CLASS, main = "True Class Labels")
+
+plot(dat2[,1:2], col = dat2_dbc$cluster + 1, main = "DBSCAN Clustering")
+
+plot(dat2[,1:2], col = dat2_EM$classification, main = "EM Clustering (GMM)")
+
+plot(dat2[,1:2], col = dat2_km$cluster, main = "K-Means Clustering (k = 4)")
+
+plot(dat2[,1:2], col = cutree(dat2_com, 2), main = "Hierarchical: Complete Linkage (k = 2)")
+plot(dat2[,1:2], col = cutree(dat2_avg, 2), main = "Hierarchical: Single Linkage (k = 2)")
+plot(dat2[,1:2], col = cutree(dat2_sin, 2), main = "Hierarchical: Average Linkage (k = 2)")
+
+plot(dat2[,1:2], col = dat2_fz$cluster, main = "Fuzzy C-Means Clustering (k = 4)")
+
+```

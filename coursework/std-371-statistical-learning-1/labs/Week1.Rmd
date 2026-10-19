@@ -1,0 +1,147 @@
+---
+title: 'Week1: Introduction to R markdown'
+author: "Woenwoei"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Header 1 
+## Header 2 
+### Header 3 
+#### Header 4 
+##### Header 5 
+###### Header 6 
+
+*Italicized text* <br>
+**Bold text** 
+
+## **Bold header**
+
+## **List**
+* item 1
+* item 2
+* item 3
+
+
+## **Hyperlink**
+
+[UniversalCVI](https://cran.r-project.org/web/packages/UniversalCVI/index.html)
+
+
+### **Inline code**
+
+Square root 4 is `sqrt(4)`<br>
+Square root 4 is `r sqrt(4)`
+
+
+### **Code chunks**
+Start a chunk with ```{r}. 
+End a chunk with ```
+
+```{r eval=TRUE, echo=TRUE}
+power3 <- function(number){
+  x = number^3
+}
+power3(2)
+```
+
+ 
+### **Options**
+
+#### -**eval**: TRUE >> To omit the results from your final report (and not run the code)
+#### -**echo**: TRUE >> To omit the code from the final report (while including the results)
+#### -**warning**: TRUE >> display code warnings in document
+#### -**error**: TRUE >> (display error messages in doc) FALSE >> (stop render when error occurs)
+#### -**result**: 'asis' >> knitr will pass through results without reformatting them
+
+
+## **Library**
+
+```{r library,echo=TRUE}
+library(dplyr)
+library(UniversalCVI)
+library(ggplot2)
+library(e1071)
+```
+
+
+### **Functions defined**
+```{r function,echo=TRUE,warning=FALSE}
+ssqrt <- function(number){
+  output = sqrt(number)
+  return(output)
+}
+ppower <- function(number,degree){
+  output = number^degree
+  return(output)
+}
+```
+
+### **Example 1:** odd number using sqrt function and even number using power function with degree by number order, collect result in dataframe 
+```{r example,echo=TRUE,warning=FALSE}
+w = data.frame()
+number = sample(1:100,10,replace = FALSE)
+index = 1
+for (i in number) {
+  if((i %% 2)==0){
+    ans = ppower(i,index)
+  }else{
+    ans = ssqrt(i)
+  }
+  w[index,"Number"] = i
+  w[index,"Output"] = ans
+  index = index+1
+}
+print(w)
+
+```
+
+
+### Multiple plot using tabset
+
+#### Data for clustering {.tabset}
+##### 4 groups data 
+```{r 4g example,echo=FALSE,warning=FALSE}
+D3_data[,3] %>% unique()
+ggplot(data.frame(D3_data),aes(x,y,col = as.factor(label)))+
+  geom_point(size=2,shape = 16)+coord_fixed()+
+  theme_minimal()+
+  theme(legend.position="none")
+
+```
+
+
+##### 5 groups data 
+```{r 5g example,echo=FALSE,warning=FALSE}
+D5_data[,3] %>% unique()
+ggplot(data.frame(D5_data),aes(x,y,col = as.factor(label)))+
+  geom_point(size=2,shape = 16)+coord_fixed()+
+  theme_minimal()
+```
+
+##### 9 groups data 
+```{r 9g example,echo=FALSE}
+R1_data[,3] %>% unique()
+ggplot(data.frame(R1_data),aes(x,y,col = as.factor(label)))+
+  geom_point(size=2,shape = 16)+coord_fixed()+
+  theme_minimal()+
+  theme(legend.position="none")
+```
+
+#### {-}
+
+
+### **Multiple tabset**
+
+### Data for clustering {.tabset}
+#### 4 groups data {.tabset}
+
+##### data1 
+
+##### data2
+
+#### 5 groups data {.tabset}
+
+##### data3 
+
+##### data4

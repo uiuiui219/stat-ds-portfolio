@@ -1,0 +1,153 @@
+---
+title: "LAB + HW1 STD471"
+output:
+  html_document: default
+  pdf_document: default
+author: "65090502417 ปิยพัทธ์ จันทร์ทวี"
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(ISLR2)
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+library(ggridges)
+library(patchwork)
+```
+
+### ข้อ 1 tune cut-off ได้ว่าเลือกใช้ cutoff \> 0.35 ได้ F1 \> 0.5
+
+```{r}
+data = Default
+K = 1:10
+folds = sample(K,nrow(data),replace=TRUE)
+label.name = "default"
+Acc1= data.frame()
+
+for(i in K){
+  train= glm(default~., data = data[folds!=i,],
+             family = "binomial")
+  pred = ifelse(predict(train,newdata = data[folds==i,],type = "response")> 0.35,
+                "Yes","No")
+  Acc1[i,"Acc"] = mean(Default[folds==i,label.name]==pred)
+  tab = table(Default[folds==i,label.name],pred)
+  Acc1[i,"TPR"] = tab[2,2]/(tab[2,1]+tab[2,2])
+  Acc1[i,"F1"] = 2*tab[2,2]/(tab[1,2]+tab[2,1]+2*tab[2,2])
+}
+
+summary(glm(default~., data = data,
+            family = "binomial"))
+
+colMeans(Acc1)
+
+```
+
+### ข้อ 2 creditcard with poisson
+
+```{r}
+creditcard <- read.csv("CreditCard.csv")
+head(creditcard)
+str(creditcard)
+
+ggplot(data = creditcard ,
+       aes(x = active)) + 
+  geom_histogram(bins = 30 , 
+                 fill = "green4",
+                 color = "black") + 
+  theme_minimal()
+
+rmse_poi <- numeric(10)
+for (i in 1:10){
+  train_idx <- sample(1:dim(creditcard)[1], size = (0.8 * dim(creditcard)[1]))
+  credit_train <- creditcard[train_idx,]
+  credit_test <- creditcard[-train_idx,]
+
+
+  poi_mod <- glm(active~.,data = credit_train, 
+               family = "poisson")
+  poi_pred <- predict.glm(poi_mod, newdata = credit_test, type = "response")
+
+  rmse_poi[i] <-  sqrt(mean((credit_test$active - poi_pred)^2))
+}
+
+mean(rmse_poi) # ประมาณ 6
+
+```
+
+### 
+
+### ข้อ 3 GAMMA (ent, oncology, psychiatry, surgical)
+
+```{r}
+pqt <- read.csv("pqt.csv")
+head(pqt)
+str(pqt)
+
+g1 <- ggplot(data = pqt, aes(x = st, y = doctor)) + 
+  geom_boxplot() +
+  theme_minimal()
+
+g2 <- ggplot(data = pqt, aes(x = st, y = doctor)) + 
+  geom_density_ridges() +
+  theme_minimal()
+
+g3 <- ggplot(data = pqt, aes(x = st, y = doctor)) +
+  geom_count(aes(colour = Gender)) +
+  theme_minimal()
+
+g4 <- ggplot(data = pqt, aes(x = st, y = doctor)) +
+  geom_count(aes(colour = Age)) +
+  scale_color_gradient(low = "lightblue", 
+                       high = "darkblue") +
+  theme_minimal()
+
+g1
+g2
+g3
+g4
+
+selected_pqt <- pqt |> 
+  filter(doctor %in% c("ent",
+                       "oncology",
+                       "psychiatry",
+                       "surgical"))
+
+g5 <- ggplot(data = selected_pqt, aes(x = st, y = doctor)) + 
+  geom_boxplot() +
+  theme_minimal()
+
+g6 <- ggplot(data = selected_pqt, aes(x = st, y = doctor)) + 
+  geom_density_ridges() +
+  theme_minimal()
+
+g5
+g6
+
+gam_rmse <- numeric(10)
+for (i in 1:10){
+  train_gam_idx <- sample(1:dim(selected_pqt)[1], 
+                        size = (0.8 * dim(selected_pqt)[1]))
+  train_selected_pqt <- selected_pqt[train_gam_idx,]
+  test_selected_pqt <- selected_pqt[-train_gam_idx,]
+  
+  gam_mod <- glm(st~., 
+               data = train_selected_pqt,
+               family = "Gamma")
+  gam_pred <- predict(gam_mod,newdata = test_selected_pqt, type = "response")
+  gam_rmse[i] <- sqrt(mean((test_selected_pqt$st - gam_pred)^2))
+}
+
+mean(gam_rmse)
+summary(gam_mod)
+fin_table <- cbind(test_selected_pqt, gam_pred) 
+
+fin_table <- fin_table |> mutate(error = st - gam_pred)
+
+fin_table |> 
+  group_by(doctor) |>
+  summarise(avg_st = mean(st),
+            avg_predict = mean(gam_pred),
+            avg_error = mean(error),
+            rmse = sqrt(mean((st - gam_pred)^2)))
+
+```

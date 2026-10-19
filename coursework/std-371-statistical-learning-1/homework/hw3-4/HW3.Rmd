@@ -1,0 +1,355 @@
+---
+title: "HW3"
+output:
+  word_document: default
+  html_document: default
+date: "2025-03-08"
+---
+### Data: BankChurners
+#### Variables: 
+#### "Attrition_Flag"
+#### "Customer_Age" 
+#### "Gender" 
+#### "Dependent_count"    
+#### "Education_Level"          
+#### "Income_Category"          
+#### "Months_on_book"          
+#### "Total_Relationship_Count" 
+#### "Months_Inactive_12_mon"  
+#### "Contacts_Count_12_mon"    
+#### "Credit_Limit"            
+#### "Avg_Utilization_Ratio"
+
+##### แปลงค่า Non-Numeric
+```{r include=FALSE}
+bank <- read.csv("BankChurners.csv")
+
+bank <- bank[,c(2:8, 10:14, 21)]
+bank$Attrition_Flag <- factor(bank$Attrition_Flag, levels = c("Attrited Customer", "Existing Customer"))
+
+str(bank)
+Attrition_Flag <- bank$Attrition_Flag
+bank <- model.matrix(Attrition_Flag~., data = bank)[,-1]
+bank <- data.frame(Attrition_Flag, bank)
+```
+
+```{r}
+dim(bank)
+table(bank$Attrition_Flag)
+```
+
+#### Smote 75% (ไม่ 100% เพราะ ป้องกัน Overfitting)
+```{r}
+library(performanceEstimation)
+bank <- smote(Attrition_Flag~., data = bank, perc.over = 3.45, perc.under = 1.75)
+
+dim(bank)
+table(bank$Attrition_Flag)
+```
+
+#Model 1
+##Logistic Regession with Monte Cross-Validation
+
+```{r include=FALSE}
+
+logis_acc = seq(20)
+logis_tp = seq(20)
+logis_tn = seq(20)
+logis_fp = seq(20)
+logis_fn = seq(20)
+logis_pre = seq(20)
+logis_rec = seq(20)
+logis_f1 = seq(20)
+
+for (i in 1:20){
+  train <- sample(dim(bank)[1], size = (0.8*dim(bank)[1]), replace = FALSE)
+  logis <- glm(Attrition_Flag~.,data = bank, subset = train, family = 'binomial')
+  prob <- predict.glm(logis, newdata = bank[-train,], type = "response")
+  pred <- rep("Attrited Customer", length(prob))
+  pred[prob > median(prob)] = "Existing Customer"
+  logis_acc[i] <- mean(bank[-train, ]$Attrition_Flag == pred)
+  logis_table <- table(pred, bank[-train, ]$Attrition_Flag)
+  logis_tp[i] <- logis_table[1,1]
+  logis_tn[i] <- logis_table[2,2]
+  logis_fp[i] <- logis_table[1,2]
+  logis_fn[i] <- logis_table[2,1]
+  logis_pre[i] <- logis_tp[i]/(logis_tp[i] + logis_fp[i])
+  logis_rec[i] <- logis_tp[i]/(logis_tp[i] + logis_fn[i])
+  logis_f1[i] <- 2*logis_pre[i]*logis_rec[i]/(logis_pre[i] + logis_rec[i])
+}
+
+avg_acc <- mean(logis_acc)
+avg_tp <- mean(logis_tp)
+avg_tn <- mean(logis_tn)
+avg_fp <- mean(logis_fp)
+avg_fn <- mean(logis_fn)
+
+avg_table <- matrix(c(avg_tp, avg_fp, avg_fn, avg_tn), byrow = TRUE, ncol = 2)
+colnames(avg_table) <- c("Attrited Customer", "Existing Customer")
+rownames(avg_table) <- c("Pred Attrited Customer", "Pred Existing Customer")
+
+avg_pre <- mean(logis_pre)
+avg_rec <- mean(logis_rec)
+avg_f1 <- mean(logis_f1)
+
+library(ROSE)
+logis_auc <- roc.curve(bank$Attrition_Flag[-train], pred)$auc
+```
+
+```{r}
+avg_table
+```
+
+```{r}
+avg_acc
+avg_pre
+avg_rec
+avg_f1
+
+library(ROSE)
+roc.curve(bank$Attrition_Flag[-train], pred)
+```
+
+# Model 2
+## เทียบ forward backward hybrid จาก rss
+```{r include=FALSE}
+library(leaps)
+library(tictoc)
+library(boot)
+
+
+forward=regsubsets(Attrition_Flag~.,data=bank,nvmax = dim(bank)[2], method = "forward")
+backward=regsubsets(Attrition_Flag~.,data=bank,nvmax = dim(bank)[2], method = "backward")
+hybrid=regsubsets(Attrition_Flag~.,data=bank,nvmax = dim(bank)[2], method = "seqrep")
+
+
+forward_summary <- summary(forward)
+backward_summary <- summary(backward)
+hybrid_summary <- summary(hybrid)
+
+varia_select <- matrix(c("Forward", "Backward", "Hybrid", 
+                         which.min(forward_summary$rss),which.min(backward_summary$rss),which.min(hybrid_summary$rss)),
+                       ncol = 2, byrow = FALSE)
+colnames(varia_select) <- c("Method", "number of variable")
+
+```
+
+### จำนวนตัวแปรที่ให้ ค่า rss น้อยสุด ของแต่ละ method
+```{r}
+varia_select
+```
+
+
+### เลือกใช้ hybrid method เพื่อความหยืดหยุ่นกับชุดข้อมูล
+```{r include=FALSE}
+hyb_acc <- 1:20
+hyb_pre <- 1:20
+hyb_rec <- 1:20
+hyb_f1 <- 1:20
+
+hyb_tp = seq(20)
+hyb_tn = seq(20)
+hyb_fp = seq(20)
+hyb_fn = seq(20)
+
+
+for (i in 1:20){
+  train <- sample(dim(bank)[1], size = (0.8*dim(bank)[1]), replace = FALSE)
+  hyb_variable <- hybrid_summary$which[which.min(hybrid_summary$rss), ]
+
+  hyb_mod <- glm(Attrition_Flag~., data = bank[ ,hyb_variable], subset = train, family = "binomial" )
+  hyb_prob <- predict(hyb_mod, newdata= bank[-train,], type = "response")
+  hyb_pred <- rep("Attrited Customer", length(hyb_prob))
+  hyb_pred[hyb_prob > median(hyb_prob)] = "Existing Customer"
+  hyb_acc[i] <- mean(bank[-train, ]$Attrition_Flag == hyb_pred)
+  hyb_table <- table(hyb_pred, bank[-train, ]$Attrition_Flag)
+  hyb_tp[i] <- hyb_table[1,1]
+  hyb_tn[i] <- hyb_table[2,2]
+  hyb_fp[i] <- hyb_table[1,2]
+  hyb_fn[i] <- hyb_table[2,1]
+  hyb_pre[i] <- hyb_tp[i]/(hyb_tp[i] + hyb_fp[i])
+  hyb_rec[i] <- hyb_tp[i]/(hyb_tp[i] + hyb_fn[i])
+  hyb_f1[i] <- 2*hyb_pre[i]*hyb_rec[i]/(hyb_pre[i] + hyb_rec[i])
+}
+
+avg_hyb_tp <- mean(hyb_tp)
+avg_hyb_tn <- mean(hyb_tn)
+avg_hyb_fp <- mean(hyb_fp)
+avg_hyb_fn <- mean(hyb_fn)
+
+avg_hyb_table <- matrix(c(avg_hyb_tp, avg_hyb_fp, avg_hyb_fn, avg_hyb_tn), byrow = TRUE, ncol = 2)
+colnames(avg_hyb_table) <- c("Attrited Customer", "Existing Customer")
+rownames(avg_hyb_table) <- c("Pred Attrited Customer", "Pred Existing Customer")
+
+
+avg_hyb_acc <- mean(hyb_acc)
+avg_hyb_pre <- mean(hyb_pre)
+avg_hyb_rec <- mean(hyb_rec)
+avg_hyb_f1 <- mean(hyb_f1)
+
+hyb_auc <- roc.curve(bank$Attrition_Flag[-train], hyb_pred)$auc
+```
+
+```{r}
+avg_hyb_table
+avg_hyb_acc
+avg_hyb_pre
+avg_hyb_rec
+avg_hyb_f1
+
+roc.curve(bank[-train,]$Attrition_Flag, hyb_pred)
+```
+
+# Model 3
+## PCA 
+```{r include=FALSE}
+bank <- read.csv("BankChurners.csv")
+
+bank <- bank[,c(2:8, 10:14, 21)]
+bank$Attrition_Flag <- factor(bank$Attrition_Flag, levels = c("Attrited Customer", "Existing Customer"))
+
+str(bank)
+Attrition_Flag <- bank$Attrition_Flag
+bank <- model.matrix(Attrition_Flag~., data = bank)[,-1]
+bank <- data.frame(Attrition_Flag, bank)
+
+pca <- prcomp(bank[,-1], scale = TRUE)
+pca_var <- (pca$sdev)^2
+pca_var_ratio <- pca_var/sum(pca_var)
+#plot(pca_var_ratio)
+
+cumu_var <- cumsum(pca_var_ratio)
+#plot(cumu_var)
+
+library(pls)
+
+bank$Attrition_Flag <- as.numeric(bank$Attrition_Flag)-1
+pca_mod <- pcr(Attrition_Flag~.,data = bank, scale = TRUE , validation = "CV")
+summary(pca_mod)
+```
+
+## compare cumulative with cross-validation error
+```{r}
+par(mfrow = c(1,2))
+plot(cumu_var)
+validationplot(pca_mod, val.type="RMSEP")
+
+cumu_var[18]
+```
+
+## จากการพิจารณากราฟ จึงเลือก PCA 18
+```{r}
+bank_pca <- data.frame(bank$Attrition_Flag, pca$x[,1:18])
+bank_pca$bank.Attrition_Flag <- factor(bank_pca$bank.Attrition_Flag, levels = c(0,1))
+
+library(performanceEstimation)
+bank_pca <- smote(bank.Attrition_Flag~., data = bank_pca, perc.over = 3.45, perc.under = 1.75)
+
+pca_mod <- glm(bank.Attrition_Flag~.,data = bank_pca, family = "binomial")
+```
+
+```{r include=FALSE}
+summary(pca_mod)
+pca_acc <- 1:20
+pca_pre <- 1:20
+pca_rec <- 1:20
+pca_f1 <- 1:20
+
+pca_tp = seq(20)
+pca_tn = seq(20)
+pca_fp = seq(20)
+pca_fn = seq(20)
+pca_pre = seq(20)
+pca_rec = seq(20)
+pca_f1 = seq(20)
+
+
+table(bank_pca$bank.Attrition_Flag)
+for (i in 1:20){
+  train <- sample(dim(bank_pca)[1], size = (0.8*dim(bank_pca)[1]), replace = FALSE)
+
+  pca_mod <- glm(bank.Attrition_Flag~.,data = bank_pca, family = "binomial")
+  pca_prob <- predict(pca_mod, newdata= bank_pca[-train,], type = "response")
+  pca_pred <- rep(0, length(pca_prob))
+  pca_pred[pca_prob > median(pca_prob)] = 1
+  pca_acc[i] <- mean(bank_pca[-train, ]$bank.Attrition_Flag == pca_pred)
+  pca_table <- table(pca_pred, bank_pca[-train, ]$bank.Attrition_Flag)
+  pca_tp[i] <- pca_table[1,1]
+  pca_tn[i] <- pca_table[2,2]
+  pca_fp[i] <- pca_table[1,2]
+  pca_fn[i] <- pca_table[2,1]
+  pca_pre[i] <- pca_tp[i]/(pca_tp[i] + pca_fp[i])
+  pca_rec[i] <- pca_tp[i]/(pca_tp[i] + pca_fn[i])
+  pca_f1[i] <- 2*pca_pre[i]*pca_rec[i]/(pca_pre[i] + pca_rec[i])
+}
+
+
+avg_pca_tp <- mean(pca_tp)
+avg_pca_tn <- mean(pca_tn)
+avg_pca_fp <- mean(pca_fp)
+avg_pca_fn <- mean(pca_fn)
+
+avg_pca_table <- matrix(c(avg_pca_tp, avg_pca_fp, avg_pca_fn, avg_pca_tn), byrow = TRUE, ncol = 2)
+colnames(avg_pca_table) <- c("Attrited Customer", "Existing Customer")
+rownames(avg_pca_table) <- c("Pred Attrited Customer", "Pred Existing Customer")
+
+
+avg_pca_acc <- mean(pca_acc)
+avg_pca_pre <- mean(pca_pre)
+avg_pca_rec <- mean(pca_rec)
+avg_pca_f1 <- mean(pca_f1)
+
+pca_auc <- roc.curve(bank_pca[-train,]$bank.Attrition_Flag, pca_pred)$auc
+
+```
+
+```{r}
+avg_pca_table
+avg_pca_acc
+avg_pca_pre
+avg_pca_rec
+avg_pca_f1
+
+roc.curve(bank_pca[-train,]$bank.Attrition_Flag, pca_pred)$auc
+
+```
+
+## เปรียบเทียบ 3 model
+```{r include=FALSE}
+
+compare_table <- matrix(c(avg_acc, avg_pre, avg_rec, avg_f1, logis_auc, 
+         avg_hyb_acc, avg_hyb_pre, avg_hyb_rec, avg_hyb_f1, hyb_auc, 
+         avg_pca_acc, avg_pca_pre, avg_pca_rec, avg_pca_f1, pca_auc), byrow = FALSE, ncol = 3)
+
+rownames(compare_table) <- c("accuracy", "precision", "recall", "f1-score", "AUC")
+
+colnames(compare_table) <- c("Model_1", "Model_2", "Model_3")
+```
+
+```{r}
+compare_table
+```
+
+### จากการที่ จุดประสงค์ในการสร้างตัวแบบ คือการ "หาลูกค้าที่ยกเลิกบัตร" และจำเป็นต้องคำนึงถึงลูกค้าที่ยังคงเป็นลูกค้าบัตรอยู่ จึงใช้ AUC ทดสอบ ภาพรวมของ Model
+
+### จากการที่ Model_2 ให้ค่า AUC ที่มากที่สุด จึงจะนำ MOdel_2 มาพิจารณา
+```{r}
+summary(hyb_mod)
+```
+
+## จากผลของ Model ได้ว่า ตัวแปรที่เหมาะสมสำหรับ Model
+#### GenderM 
+
+#### Education_LevelDoctorate 
+#### Education_LevelPost.Graduate 
+
+#### Income_Category.40K....60K
+#### Income_Category.60K....80K  
+#### Income_CategoryLess.than..40K    
+#### Income_CategoryUnknown 
+
+#### Total_Relationship_Count ยิ่งมีสัมพันธ์ หรือพันธะกับธนาคารมาก ยิ่งส่งเสริม ให้เกิดข้อผูกมันกับทางธนาคารมาก เช่น เช่น สินเชื่อ, เงินฝาก, การลงทุน ทำให้เครดิตของการเป็นลูกค้าบัตรก็จะมีมาก
+#### Months_Inactive_12_mon  ลูกค้าลืม ไม่ใช้บัตรนาน เครดิตหมด
+#### Contacts_Count_12_mon  ลูกค้ามีปัญหาบ่อยกับธนาคาร
+#### Credit_Limit วงเงินสูง อิสระทางการเงินของลูกค้ามีมาก ลูกค้าเกิดข้อผูกมัดกับธนาคารมาก ยิ่งใช้บัตรได้มากเท่าไหร่ ยิ่งมีเครดิตมากเท่านั้น และยิ่งเครดิตมีมาก สิทธิประโยชน์แก่เจ้าของบัตรก็จะมีมาก
+#### Avg_Utilization_Ratio   จ่ายยอดเกินวงเงินไม่ครบ ธนาคารไม่ปล่อย

@@ -1,0 +1,207 @@
+---
+title: "HW6"
+output: html_document
+date: "2025-03-29"
+---
+
+```{r include=FALSE}
+BankChurners <- read.csv("BankChurners.csv")
+str(BankChurners)
+bank <- BankChurners[,-c(1,2,4,6,7,8,9)]
+bank <- scale(bank)
+```
+
+# a.) Apply K-means, and hierarchical clustering to segment credit card customers using only quantitative variables.
+# b.) Apply the elbow method to select an appropriate number of groups.
+
+## K-mean and elbow
+```{r}
+k_check <- 1:9
+for (i in 1:length(k_check)){
+  k_mean <- kmeans(bank,i,nstart = 20)
+  k_check[i] <- k_mean$tot.withinss
+}
+plot(k_check, type = "b")
+points(2,k_check[2],col = "green", pch = 20, cex = 2)
+```
+
+## Hierarchical Clustering
+```{r}
+bank_complete =hclust(dist(bank), method="complete")
+bank_average =hclust(dist(bank), method="average")
+bank_single =hclust(dist(bank), method="single")
+
+plot(bank_complete ,main="Complete Linkage", xlab="", sub="", cex=.9)
+plot(bank_average ,main="Average Linkage", xlab="", sub="", cex=.9)
+plot(bank_single ,main="Single Linkage", xlab="", sub="", cex=.9)
+
+```
+
+# c.)Apply cluster validity indices to select an appropriate number of groups.
+
+## cluster validity indices
+```{r}
+library(UniversalCVI)
+k_clus_valid <- Hvalid(bank, kmax = 10, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"), method = "kmeans", p = 2, q = 2, corr = "pearson", nstart = 20, NCstart = TRUE)
+plot_idx(k_clus_valid)
+```
+### cluster validate result compare with elbow:
+ได้ว่า กลุ่มที่สมควรแบ่งคือ 2 หรือ 7 
+
+## PCA 80% selection
+```{r}
+pca <- prcomp(bank, scale = TRUE)
+pc_var <- (pca$sdev)^2
+pc_var_ratio <- pc_var/sum(pc_var)
+pc_cumu <- cumsum(pc_var_ratio)
+plot(pc_cumu, type = "l")
+pc_select <- which(pc_cumu > 0.8)[1]
+points(pc_select, pc_cumu[pc_select], col = "blue", pch = 20, cex = 2)
+```
+
+
+
+## hclust elbow
+```{r}
+
+k_com=rep(0,10)
+k_avg=rep(0,10)
+k_sin=rep(0,10)
+
+for (k in 1:10)
+{
+  for (i in 1:k)
+  {
+    k_com[k]=k_com[k]+sum(dist(bank[cutree(bank_complete, k)==i,])^2)/sum(cutree(bank_complete, k)==i)
+    k_avg[k]=k_avg[k]+sum(dist(bank[cutree(bank_average, k)==i,])^2)/sum(cutree(bank_average, k)==i)
+    k_sin[k]=k_sin[k]+sum(dist(bank[cutree(bank_single, k)==i,])^2)/sum(cutree(bank_single, k)==i)
+    
+  }
+}
+
+plot(1:10,k_com,type="b",xlab="K",ylab = "Total Within-cluster distance")
+
+plot(1:10,k_avg,type="b",xlab="K",ylab = "Total Within-cluster distance")
+
+plot(1:10,k_sin,type="b",xlab="K",ylab = "Total Within-cluster distance")
+
+
+```
+
+# d.)Select the final number of groups based on either a) or b) and explain your reasoning.
+
+## k = 2
+```{r}
+k_elbow <- kmeans(bank, 2, nstart = 20)
+
+plot(pca$x[,1:pc_select], col = k_elbow$cluster+1, pch=20, cex=1,ann = FALSE,xaxt='n',yaxt='n')
+
+k_elbow$centers
+k2_cust_1 <- BankChurners[k_elbow$cluster == 1,]
+k2_cust_2 <- BankChurners[k_elbow$cluster == 2,]
+
+```
+### จากการพิจารณา kmean = 2groups ได้ว่า
+### กลุ่มที่ 1 =  กลุ่มคนที่มีกำลังซื้อต่ำ credit limit ต่ำ ยอดค้างชำระสูง
+### กลุ่มที่ 2 = กลุ่มคนที่มีกำลังซื้อมาก credit limit มาก ยอดค้างชำระต่ำค้างชำระต่ำ
+### ซึ่ง Make Sense อยู่แล้ว จึงทำให้การแบ่ง 2 กลุ่มสามารถจำแนกลูกค้าและสามารถ
+### หามาตรการในการ holding ลูกค้าไว้ได้ในระดับนึง
+### อย่างเช่น กลุ่มลูกค้าที่มีกำลังจ่ายมาก credit limit มาก อาจมีการให้ โปรโมชั่นพิเศษสำหรับลูกค้า ที่แม้จะเป็นโปรโมชั่นที่ธนาคารแลดูเสียผลประโยชน์ แต่การทำให้ลูกค้าที่มี กำลังซื้อมากพึงพอใจ จะทำให้ธนาคารได้ผลประโยชน์ที่มาขึ้นในอนาคต
+
+## k = 7
+```{r}
+k_7 <- kmeans(bank, 7, nstart = 20)
+
+plot(pca$x[,1:pc_select], col = k_7$cluster+1, pch=20, cex=1,ann = FALSE,xaxt='n',yaxt='n')
+
+k_7$centers
+
+```
+### จากการพิจารณา kmean = 7 กลุ่ม สามารถจำแนกกลุ่มที่มีกำลังซื้อมาก credit limit มาก เช่นเดียวกับ kmean = 2 กลุ่ม ทั้งยังมีกลุ่มจำแนกอื่นๆที่น่าสนใจ
+
+## จึงจะเลือก Final group เป็น K_mean = 7 กลุ่ม
+
+```{r}
+k_7$centers
+
+k7_clus_1 <- BankChurners[k_7$cluster == 1,]
+k7_clus_2 <- BankChurners[k_7$cluster == 2,]
+k7_clus_3 <- BankChurners[k_7$cluster == 3,]
+k7_clus_4 <- BankChurners[k_7$cluster == 4,]
+k7_clus_5 <- BankChurners[k_7$cluster == 5,]
+k7_clus_6 <- BankChurners[k_7$cluster == 6,]
+k7_clus_7 <- BankChurners[k_7$cluster == 7,]
+
+
+table(k7_clus_1$Attrition_Flag)/sum(table(k7_clus_1$Attrition_Flag))
+table(k7_clus_2$Attrition_Flag)/sum(table(k7_clus_2$Attrition_Flag))
+table(k7_clus_3$Attrition_Flag)/sum(table(k7_clus_3$Attrition_Flag))
+table(k7_clus_4$Attrition_Flag)/sum(table(k7_clus_4$Attrition_Flag))
+table(k7_clus_5$Attrition_Flag)/sum(table(k7_clus_5$Attrition_Flag))
+table(k7_clus_6$Attrition_Flag)/sum(table(k7_clus_6$Attrition_Flag))
+table(k7_clus_7$Attrition_Flag)/sum(table(k7_clus_7$Attrition_Flag))
+
+table(k7_clus_1$Gender)/sum(table(k7_clus_1$Gender))
+table(k7_clus_2$Gender)/sum(table(k7_clus_2$Gender))
+table(k7_clus_3$Gender)/sum(table(k7_clus_3$Gender))
+table(k7_clus_4$Gender)/sum(table(k7_clus_4$Gender))
+table(k7_clus_5$Gender)/sum(table(k7_clus_5$Gender))
+table(k7_clus_6$Gender)/sum(table(k7_clus_6$Gender))
+table(k7_clus_7$Gender)/sum(table(k7_clus_7$Gender))
+
+table(k7_clus_1$Education_Level)/sum(table(k7_clus_1$Education_Level))
+table(k7_clus_2$Education_Level)/sum(table(k7_clus_2$Education_Level))
+table(k7_clus_3$Education_Level)/sum(table(k7_clus_3$Education_Level))
+table(k7_clus_4$Education_Level)/sum(table(k7_clus_4$Education_Level))
+table(k7_clus_5$Education_Level)/sum(table(k7_clus_5$Education_Level))
+table(k7_clus_6$Education_Level)/sum(table(k7_clus_6$Education_Level))
+table(k7_clus_7$Education_Level)/sum(table(k7_clus_7$Education_Level))
+
+table(k7_clus_1$Marital_Status)/sum(table(k7_clus_1$Marital_Status))
+table(k7_clus_2$Marital_Status)/sum(table(k7_clus_2$Marital_Status))
+table(k7_clus_3$Marital_Status)/sum(table(k7_clus_3$Marital_Status))
+table(k7_clus_4$Marital_Status)/sum(table(k7_clus_4$Marital_Status))
+table(k7_clus_5$Marital_Status)/sum(table(k7_clus_5$Marital_Status))
+table(k7_clus_6$Marital_Status)/sum(table(k7_clus_6$Marital_Status))
+table(k7_clus_7$Marital_Status)/sum(table(k7_clus_7$Marital_Status))
+
+table(k7_clus_1$Income_Category)/sum(table(k7_clus_1$Income_Category))
+table(k7_clus_2$Income_Category)/sum(table(k7_clus_2$Income_Category))
+table(k7_clus_3$Income_Category)/sum(table(k7_clus_3$Income_Category))
+table(k7_clus_4$Income_Category)/sum(table(k7_clus_4$Income_Category))
+table(k7_clus_5$Income_Category)/sum(table(k7_clus_5$Income_Category))
+table(k7_clus_6$Income_Category)/sum(table(k7_clus_6$Income_Category))
+table(k7_clus_7$Income_Category)/sum(table(k7_clus_7$Income_Category))
+
+table(k7_clus_1$Card_Category)/sum(table(k7_clus_1$Card_Category))
+table(k7_clus_2$Card_Category)/sum(table(k7_clus_2$Card_Category))
+table(k7_clus_3$Card_Category)/sum(table(k7_clus_3$Card_Category))
+table(k7_clus_4$Card_Category)/sum(table(k7_clus_4$Card_Category))
+table(k7_clus_5$Card_Category)/sum(table(k7_clus_5$Card_Category))
+table(k7_clus_6$Card_Category)/sum(table(k7_clus_6$Card_Category))
+table(k7_clus_7$Card_Category)/sum(table(k7_clus_7$Card_Category))
+
+
+```
+
+## จากการพิจารณา ค่า centers จะได้สรุปแต่ละกลุ่มได้เป็นดังนี้
+### กลุ่มที่ 1: เป็นกลุ่มที่มียอดการใช้จ่ายที่สูงมากแต่มี product ของธนาคารที่น้อย (อาจอนุมานได้ว่าเป็นกลุ่มลูกค้าใหม่ หรือ เป็นกลุ่มที่ใช้จ่ายแค่บัตรเดียวทุกธุรกรรม) 
+### กลุ่มที่ 2: เป็นกลุ่มที่อายุมากบุตรน้อยและใช้บัตรของธนาคารมาเป็นเวลานานแต่ยอดการใช้จ่ายไม่ได้เยอะตาม
+### กลุ่มที่ 3: กลุ่มลูกค้าอายุน้อยใช้พึ่งมาใช้บริการบัตร
+### กลุ่มที่ 4: กลุ่มที่ใช้จ่ายไม่ครบวงเงิน ยอดค้างชำระต่ำที่สุด ระยะเวลา inactive สูงที่สุด และยอดใช้จ่ายต่ำ (อาจเป็นกลุ่มลูกค้าที่ไม่ได้ใช้บัตร และมีโอกาส ที่จะยกเลิกบัตรสูง โดย 35% ของกลุ่มลูกค้านี้ เป็นลูกค้าที่ยกเลิกบัตร)  
+### กลุ่มที่ 5: กลุ่มลูกค้าที่มี credit limit และ กำลังซื้อ สูงมากที่สุด แต่ยอดการใช้จ่ายต่ำ และใช้จ่ายไม่ครบวงเงิน (อาจเป็นกลุ่มที่มีรายได้ แต่ใช้บัตรในการทำธุรกรรม หรือ ใช้จ่ายน้อย)
+### กลุ่มที่ 6: กลุ่มที่อัตราใช้จ่ายต่อวงเงินสูงที่สุด มีจำนวรบุตรมาก กำลังซื้อต่ำ credit lim ต่ำ ยอดค้างชำระสูง (เป็นกลุ่มที่มีรายได้ต่ำอาจมาจากการที่มีจำนวนบุตรมากทำให้เงินค่าเลี้ยงดูสูง จึงมีเงินไม่พอมาใช้จ่ายค่าบัตร แต่ก็ยังคงต้องใช้บัตรเพื่อความสะดวกในการเลี้ยงดูบุตรหลาน เลยสุ่มเสี่ยงที่จะเป็นกลุ่มที่ ใช้จ่ายเกินวงเงิน)
+### กลุ่มที่ 7: เป็นกลุ่มที่มีการเปลี่ยนแปลงพฤติกรรมการใช้จ่าย โดยยอดใช้จ่ายมีจำนวนลดลง
+
+
+## มาตรการการ holding ลูกค้า
+### กลุ่มที่ 1 เพิ่มโปรโมชั่นหรือเพิ่มสิทธิพิเศษกับลูกค้าที่ใช้งานบัตรอยู่บ่อยครั้ง เช่นการเพิ่มวงเงิน
+### กลุ่มที่ 2 สิทธิพิเศษเพื่อลูกค้าที่ใช้บริการกับธนาคารมาอย่างยาวนาน โดยอาจเน้นไปที่การเพิ่มสิทธิพิเศษในช่วงวัยสูงอายุที่อาจมีผลตอบแทนที่มากขึ้นและทบได้ทุกปี และเพิ่มการโฆษณาหรือโปรโมชั่นเป็นการกระตุ้นยอดการใช้งาน
+### กลุ่มที่ 3 เสริมโปรโมชั่นประกันหรือการให้คำแนะนำในการใช้บริการบัตรได้อย่างคุ้มค่าและยั่งยืน เพื่อเสริมสร้างความสัมพันธ์ในระยะยาวอาจนำเสนอ package ที่เหมาะสมต่อความต้องการของชนกลุ่มอายุน้อย)
+### กลุ่มที่ 4 ติดต่อสอบถามปัญหาหรืออาจเสนอโปรโมชั่นสุดท้ายที่อาจธนาคารอาจเสียรายได้แต่สามารถคงลูกค้าไว้ได้
+### กลุ่มที่ 5 เสนอ package ให้เข้ากับ ชีวิตผู้มีรายได้ (มีเงิน มีตังค์ Life Style คนรวย ก็ควรมีบัตรที่สามารถทำให้บริการที่ลูกค้าใช้เป็นไปได้อย่างสะดวกและผลตอบแทนคุ้มราคา)
+### กลุ่มที่ 6 ทำ package	เพื่อคุณแม่บ้านที่ต้องใช้จ่ายเลี้ยงดูบุตรหลานอย่างการ ลดหย่อนค่าธรรมเนียม ตามจำนวนบุตรหลานที่มี
+### กลุ่มที่ 7 ติดต่อสอบถามสารทุกข์สุขดิบลูกค้าจากการเปลี่ยนแปลงการใช้จ่าย
+
+
+

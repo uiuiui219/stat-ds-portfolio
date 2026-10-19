@@ -1,0 +1,169 @@
+---
+title: "LAB clustering (2 datasets)"
+author: "65090502417 ปิยพัทธ์ จันทร์ทวี"
+output: html_document
+date: "2025-10-17"
+---
+
+```{r}
+library(UniversalCVI)
+library(foreign)
+library(e1071)
+library(mclust)
+
+dat1 <- read.arff("data_set_1.arff")
+dat2 <- read.arff("data_set_2.arff")
+
+plot(dat1[,1:2], col = dat1$class)
+table(dat1$class)
+plot(dat2[,1:2], col = dat2$CLASS, pch = 16)
+table(dat2$CLASS)
+
+```
+
+### 2 data set (data 1 = 10 กลุ่มทับซ้อน, data 2 = 4 กลุ่ม + กลุ่ม Noise)
+
+```{r include=FALSE}
+# dat1 Hvalid
+
+dat1_km_index <-  Hvalid(dat1[,1:2], kmin = 2, kmax = 12,
+                      indexlist = c('NCI','CH','DB','STR'),
+                      method = "kmeans")
+dat1_hcom_index <-  Hvalid(dat1[,1:2], kmin = 2, kmax = 12,
+                         indexlist = c('NCI','CH','DB','STR'),
+                         method = "hclust_complete")
+dat1_havg_index <-  Hvalid(dat1[,1:2], kmin = 2, kmax = 12,
+                         indexlist = c('NCI','CH','DB','STR'),
+                         method = "hclust_average")
+dat1_hsin_index <-  Hvalid(dat1[,1:2], kmin = 2, kmax = 12,
+                           indexlist = c('NCI','CH','DB','STR'),
+                           method = "hclust_single")
+
+```
+
+### เลือกใช้ index ดังนี้: NCI, CH ,DB ,STR
+
+```{r}
+plot_idx(dat1_km_index)
+plot_idx(dat1_hcom_index)
+plot_idx(dat1_havg_index)
+plot_idx(dat1_hsin_index)
+```
+
+```{r}
+# FzzyCVIs
+dat1_fuzzy_index <- FzzyCVIs(dat1[,1:2], cmin = 2, cmax = 12, 
+                       indexlist = c("WP","KWON2","KPBM"))
+dat1_em_index<- FzzyCVIs(dat1[,1:2], cmin = 2, cmax = 12, 
+                       indexlist = c("WP","KWON2","KPBM"),
+                       method = "EM")
+plot_idx(dat1_fuzzy_index)
+plot_idx(dat1_em_index)
+```
+
+## \## Kmeans "DB" index = 10 \#
+
+```{r}
+km_d1 <- kmeans(dat1[,1:2], 10)
+## Kmeans "DB" index = 10 ##
+par(mfrow = c(1,2))
+plot(dat1[,1:2], col = dat1$class)
+plot(dat1[,1:2], col = km_d1$cluster)
+par(mfrow = c(1,1))
+```
+
+#### จากการใช้ทั้ง Hvalid และ FzzCVIs ในการหาจำนวนกลุ่มที่เหมาะสมกับทุก Method จะได้ว่า index "DB" ใน Hvalid ด้วย Kmeans สามารถจัดกลุ่ม 10 กลุ่ม (ทั้งนี้ทั้งนั้น เป็น 10 กลุ่มที่อาจจะไม่ได้ตรงกับ Class จริงของ Data จึงจะเลือก จำนวนกลุ่มอื่นที่เหมาะสม ได้ว่า ในหลายๆ index บน หลายๆ method ให้ค่า optimal สูงสุดที่ 5 กลุ่ม (จากการที่ data มีแนวโน้มเป็น 5 แฉก)
+
+```{r}
+# kmeans 5 กลุ่ม
+km_d1 <- kmeans(dat1[,1:2], 5)
+# hcom dat1
+hcom_dat1 <- hclust(dist(dat1[,1:2]), method = "complete")
+# havg dat1
+havg_dat1 <- hclust(dist(dat1[,1:2]), method = "average")
+# hsin dat1 
+hsin_dat1 <- hclust(dist(dat1[,1:2]), method = "single")
+# Fuzzy 5 กลุ่ม
+fzz_d1 <- cmeans(dat1[, 1:2], centers = 5)
+# EM 5 กลุ่ม
+em_d1 <- Mclust(dat1[, 1:2], G = 5)
+
+```
+
+```{r}
+plot(dat1[,1:2], col = dat1$class, main = "Real Data 10 class")
+plot(dat1[, 1:2], col = km_d1$cluster, main = "K-Means 5 clusters")
+plot(dat1[, 1:2], col = cutree(hcom_dat1, 5), main = "hcomplete 5 clusters")
+plot(dat1[, 1:2], col = cutree(havg_dat1, 5), main = "haverage 5 clusters")
+plot(dat1[, 1:2], col = cutree(hsin_dat1, 5), main = "hsingle 5 clusters")
+plot(dat1[, 1:2], col = fzz_d1$cluster ,main = "Fuzzy c-means 5 clusters")
+plot(dat1[, 1:2], col = em_d1$classification, main = "EM 5 clusters")
+```
+
+# ----------------------------------
+
+```{r include=FALSE}
+# dat2 Hvalid
+
+dat2_km_index <-  Hvalid(dat2[,1:2], kmin = 2, kmax = 8,
+                      indexlist = c('NCI','CH','DB','STR'),
+                      method = "kmeans")
+dat2_hcom_index <-  Hvalid(dat2[,1:2], kmin = 2, kmax = 8,
+                         indexlist = c('NCI','CH','DB','STR'),
+                         method = "hclust_complete")
+dat2_havg_index <-  Hvalid(dat2[,1:2], kmin = 2, kmax = 8,
+                         indexlist = c('NCI','CH','DB','STR'),
+                         method = "hclust_average")
+dat2_hsin_index <-  Hvalid(dat2[,1:2], kmin = 2, kmax = 8,
+                           indexlist = c('NCI','CH','DB','STR'),
+                           method = "hclust_single")
+
+```
+
+```{r}
+plot_idx(dat2_km_index)
+plot_idx(dat2_hcom_index)
+plot_idx(dat2_havg_index)
+plot_idx(dat2_hsin_index)
+```
+
+```{r}
+# FzzyCVIs
+dat2_fuzzy_index <- FzzyCVIs(dat2[,1:2], cmin = 2, cmax = 8, 
+                       indexlist = c("WP","KWON2","KPBM"))
+dat2_em_index<- FzzyCVIs(dat2[,1:2], cmin = 2, cmax = 8, 
+                       indexlist = c("WP","KWON2","KPBM"),
+                       method = "EM")
+plot_idx(dat2_fuzzy_index)
+plot_idx(dat2_em_index)
+```
+
+### จากการที่ data 2 เป็น data ที่มี 4 กลุ่ม หลัก และมี อีกหนึ่งกลุ่มที่ถูกระบุว่าเป็น Noise ทำให้ กลุ่มที่ควรจะเป็นคือ 4 กลุ่ม (จากการเป็น model ประเภท เลือกจำนวนกลุ่ม ทำให้จะนิยาม Noisev อยู่รวมกับกลุ่มหลัก โดยจะเป็น Noise ของกลุ่มนั้นๆ) index ที่ควรได้ คือ 4 และ index ที่ให้ค่าเป็น 4 กลุ่มมีดังนี้ - index = "STR" (method = Kmeans, Hcomplete, Haverage, Hsingle) - index = "NCI" (method = Kmeans, Hcomplete) - index = "DB" (method = Hcomplete) - index = "CH" (method = Hcomplete) \*\* และจากการที่ data2 Noise ที่กระจัดกระจาย การ หา index แบบ Soft clustering ทำให้ จุด centroid ถูกเบี่ยงไปจากกลุ่มที่แท้จริง ทำให้ index ไม่ได้กลุ่มที่เหมาะสมเท่าที่ควร \*\*
+
+```{r}
+# kmeans 5 กลุ่ม
+km_d2 <- kmeans(dat2[,1:2], 4)
+# hcom dat2
+hcom_dat2 <- hclust(dist(dat2[,1:2]), method = "complete")
+# havg dat2
+havg_dat2 <- hclust(dist(dat2[,1:2]), method = "average")
+# hsin dat2 
+hsin_dat2 <- hclust(dist(dat2[,1:2]), method = "single")
+# Fuzzy 5 กลุ่ม
+fzz_d2 <- cmeans(dat2[, 1:2], centers = 4)
+# EM 5 กลุ่ม
+em_d2 <- Mclust(dat2[, 1:2], G = 4)
+```
+
+```{r}
+plot(dat2[,1:2], col = dat2$CLASS, main = "Real Data 4 class + Noise Class")
+plot(dat2[, 1:2], col = km_d2$cluster, main = "K-Means 4 clusters")
+plot(dat2[, 1:2], col = cutree(hcom_dat2, 4), main = "hcomplete 4 clusters")
+plot(dat2[, 1:2], col = cutree(havg_dat2, 4), main = "haverage 4 clusters")
+plot(dat2[, 1:2], col = cutree(hsin_dat2, 4), main = "hsingle 4 clusters")
+plot(dat2[, 1:2], col = fzz_d2$cluster, main = "Fuzzy c-means 4 clusters")
+plot(dat2[, 1:2], col = em_d2$classification, main = "EM 4 clusters")
+
+```
+
+## \*\* ใกล้เคียงที่สุดจะเป็น Kmeans และ Fuzzy \*\*

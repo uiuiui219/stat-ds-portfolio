@@ -1,0 +1,88 @@
+---
+title: "HW5"
+output:
+  word_document: default
+  html_document: default
+date: "2025-03-16"
+---
+
+## data: bread+basket
+
+```{r setup, include=FALSE}
+library(arules)
+library(stringr)
+cafe <- read.csv('bread+basket.csv', sep=',')
+cafe <- cafe[,-1]
+caf_rule <- apriori(cafe, parameter = list(minlen=2,maxlen=8,support = 0.001, confidence = 0.001))
+
+```
+
+## top 3 popular
+```{r}
+head(sort(table(cafe$Item), decreasing = TRUE))
+
+coffee <- 1:length(caf_rule)
+coffee <- coffee[str_detect(caf_rule@rhs@itemInfo$labels[caf_rule@rhs@data@i+1] ,"Coffee")]
+
+bread <- 1:length(caf_rule)
+bread <- bread[str_detect(caf_rule@rhs@itemInfo$labels[caf_rule@rhs@data@i+1] ,"Bread")]
+
+tea <- 1:length(caf_rule)
+tea <- tea[str_detect(caf_rule@rhs@itemInfo$labels[caf_rule@rhs@data@i+1] ,"Tea")]
+
+```
+
+### Coffee
+```{r}
+inspect(head(sort(caf_rule[coffee], decreasing = TRUE),by = "lift",10))
+inspect(head(sort(caf_rule[bread], decreasing = TRUE),by = "lift",10))
+inspect(head(sort(caf_rule[tea], decreasing = TRUE),by = "lift",10))
+```
+coffee has most relation in afternoon on a weekday with highest Lift and Confidence
+bread has most relation in morning on weekday with highest Lift and Confidence
+tea has most relation in afternoon on weekday with highest Lift and Confidence
+
+```{r}
+top_3 <- c(coffee, bread, tea)
+```
+
+
+```{r}
+
+cafe <- read.csv('bread+basket.csv', sep=',')
+cafe_tran_item <- as.matrix(table(cafe$Transaction, cafe$Item))
+cafe_tran_item <- (cafe_tran_item==1)
+
+cafe_rules_1 <- apriori(cafe_tran_item, parameter = list(minlen=2,maxlen=2,support = 0.001, confidence = 0.001))
+
+coffee <- 1:length(cafe_rules_1)
+coffee <- coffee[str_detect(cafe_rules_1@rhs@itemInfo$labels[cafe_rules_1@rhs@data@i+1] ,"Coffee")]
+
+bread <- 1:length(cafe_rules_1)
+bread <- bread[str_detect(cafe_rules_1@rhs@itemInfo$labels[cafe_rules_1@rhs@data@i+1] ,"Bread")]
+
+tea <- 1:length(cafe_rules_1)
+tea <- tea[str_detect(cafe_rules_1@rhs@itemInfo$labels[cafe_rules_1@rhs@data@i+1] ,"Tea")]
+
+top_3 <- c(coffee, bread, tea)
+
+
+inspect(head(sort(cafe_rules_1[-top_3], decreasing = TRUE,by = "lift"),10))
+
+```
+highest relation with Lift : {Extra Salami or Feta}	=>	{Salad} and {Salad}	=>	{Extra Salami or Feta}
+that's mean customer who order salad will prefer "Extra Salami or Feta" as the topping more than the other such as Soup or Spanish Brunch
+
+
+```{r}
+salad <- 1:length(cafe_rules_1)
+salad <- salad[str_detect(cafe_rules_1@rhs@itemInfo$labels[cafe_rules_1@rhs@data@i+1] ,"Salad")]
+inspect(head(sort(cafe_rules_1[salad], decreasing = TRUE,by = "lift"),10))
+
+```
+```{r}
+salami <- 1:length(cafe_rules_1)
+salami <- salami[str_detect(cafe_rules_1@rhs@itemInfo$labels[cafe_rules_1@rhs@data@i+1] ,"Salami")]
+inspect(head(sort(cafe_rules_1[salami], decreasing = TRUE,by = "lift"),10))
+```
+In term of Business : To increase sales is to attach the Menu with the Image of this three combination "Salad with Extra Salami or Feta beside with coffee" for remind customer.

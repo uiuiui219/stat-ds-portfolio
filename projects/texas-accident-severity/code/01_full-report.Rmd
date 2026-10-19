@@ -1,0 +1,633 @@
+---
+title: "Final Prject"
+author: "65090502410 นายณภัทร เกียรติกอบลาภ, 65090502414 นายธนวินท์ แสงวิสุทธิ์ ,65090502417 ปิยพัทธ์ จันทร์ทวี"
+date: "2025-11-28"
+output: html_document
+---
+
+# ที่มาและความสำคัญ
+    อุบัติเหตุทางถนนในรัฐเท็กซัส ประเทศสหรัฐอเมริกายังคงเป็นปัญหารุนแรงเนื่องจากปริมาณการจราจรที่หนาแน่นและพื้นที่ขนาดใหญ่ การวิเคราะห์ปัจจัยที่ส่งผลต่อการเกิดและความรุนแรงของอุบัติเหตุจึงมีความสำคัญต่อการวางแผนลดความเสี่ยง การใช้ Machine Learning สามารถช่วยพยากรณ์ความรุนแรงของอุบัติเหตุ ระบุพื้นที่และช่วงเวลาที่เสี่ยงสูง และสนับสนุนการจัดสรรทรัพยากรและการตอบสนองเหตุการณ์ได้อย่างมีประสิทธิภาพ
+
+## วัตถุประสงค์
+1.) เพื่อสร้างโมเดลการทำนายความรุนแรงของอุบัติเหตุทางถนนในรัฐเท็กซัส ประเทศสหรัฐอเมริกา
+2.) เพื่อคาดการณ์และระบุจุดเสี่ยงที่มีความรุนแรงสูงต่อการเกิดอุบัติเหตุ
+3.) เพื่อประเมินและวิเคราะห์ปัจจัยที่มีผลต่อความรุนแรงของอุบัติเหตุ
+
+## ประโยชน์ที่คาดว่าจะได้รับ
+  1.) ช่วยในการวางแผนปรับปรุงสัญญาณจราจรและมาตรการความปลอดภัยในพื้นที่ที่มีความเสี่ยงสูง
+  2.) ช่วยลดการจราจรติดขัดและความเสียหายทางเศรษฐกิจที่เกิดจากอุบัติเหตุร้ายแรง
+  3.) เพื่อประเมินและวิเคราะห์ปัจจัยที่มีผลต่อความรุนแรงของอุบัติเหตุ
+
+## ชุดข้อมูลที่ใช้
+  ชุดข้อมูลอุบัติเหตุรถยนต์ทั่วประเทศ ครอบคลุม 49 รัฐของสหรัฐอเมริกาข้อมูลอุบัติเหตุถูกเก็บรวบรวมตั้งแต่เดือนกุมภาพันธ์ 2559 ถึงมีนาคม 2566 ชุดข้อมูลนี้มีบันทึกอุบัติเหตุประมาณ7.7 ล้านรายการ จาก https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents
+เนื่องจากข้อมูลมีปริมาณมากจึงจะเจาะจงไปที่รัฐ Texas เมือง San Antonio
+
+## วิธีการดำเนินการ
+  1.  ) เตรียม Package และข้อมูลที่จะใช้ 
+  2.	) จัดการเตรียมข้อมูลและกำหนดตัวแปร 
+  3.	) ทำ Unsupervise ด้วย PCA และ ใช้ k-means clustering และ Expectation-Maximization clustering (EM clustering) โดยเลือกจำนวนจุด cluster ด้วย library(UniversalCVI) พร้อมตีความคุณลักษณะของแต่ละ cluster ผลจากการทำ cluster จะนำไปใช้เป็นหนึ่งในตัวแปรของการทำ Supervise 
+  4.	) ทำ Supervise แบ่ง training set และ test set สร้างตัวแบบ Random Forest, XGboost, BART และทำ Cross-Validation ด้วย 5-fold และเปรียบเทียบด้วย ค่า F1-score
+  5.	) วิเคราะห์ตัวแปรจากตัวแบบที่ดีที่สุด
+  6.	) เลือกจุดเกิดเหตุยอดนิยมที่มีผลกับความรุนแรงอุบัติเหตุมา 3 จุดและ หา Wait time ของการเกิดอุบัติเหตุต่อไป ณ บริเวณนั้นๆ 
+
+
+
+### ตัวแปรที่ใช้
+  Start_Time	เวลาที่อุบัติเหตุเริ่มต้น (ตามเวลาท้องถิ่น)
+  Severity		ระดับความรุนแรงของอุบัติเหตุ (1 = น้อยสุด, 4 = รุนแรงสุด)
+  Start_Lat	ละติจูด (GPS) จุดเริ่มต้นของอุบัติเหตุ
+  Start_Lng	ลองจิจูด (GPS) จุดเริ่มต้นของอุบัติเหตุ
+  Temperature(F)		 อุณหภูมิ (ฟาเรนไฮต์)
+  Wind_Chill(F)		อุณหภูมิที่รู้สึกได้จากลม
+  Humidity(%)		ความชื้นสัมพัทธ์ (%)
+  Pressure(in)		ความดันอากาศ (นิ้วปรอท)
+  Visibility(mi)		ทัศนวิสัย (หน่วยไมล์)
+  Wind_Speed(mph)	ความเร็วลม (ไมล์ต่อชั่วโมง)
+  Precipitation(in)		ปริมาณฝนหรือหิมะตก (นิ้ว)
+  Amenity	มีสิ่งอำนวยความสะดวกอยู่ใกล้หรือไม่
+  Bump		มีลูกระนาดหรือไม่
+  Crossing		มีทางข้ามถนนอยู่ใกล้หรือไม่
+  Give_Way		มีป้าย “ให้ทาง (Give Way)” หรือไม่
+  Junction		อยู่ใกล้สี่แยกหรือไม่
+  No_Exit		อยู่ในถนนตันหรือไม่
+  Railway		อยู่ใกล้ทางรถไฟหรือไม่
+  Roundabout		อยู่ใกล้วงเวียนหรือไม่
+  Station		อยู่ใกล้สถานี (รถไฟ/รถบัส) หรือไม่
+  Stop		อยู่ใกล้ป้ายหยุดหรือไม่
+  Traffic_Calming		อยู่ในพื้นที่ที่มีการชะลอความเร็วหรือไม่
+  Traffic_Signal		มีสัญญาณไฟจราจรอยู่ใกล้หรือไม่
+  Sunrise_Sunset		ช่วงเวลา (กลางวัน/กลางคืน) ตามดวงอาทิตย์ขึ้น/ตก
+  Civil_Twilight		ช่วงเวลาเช้า/ค่ำ ตามนิยามพลเรือน  
+  Nautical_Twilight		ช่วงเวลาเช้า/ค่ำ ตามนิยามเดินเรือ  
+  Astronomical_Twilight		ช่วงเวลาเช้า/ค่ำ ตามนิยามดาราศาสตร์
+
+
+
+## 1.Load Libraries and Data 
+  
+```{r include=FALSE}
+library(dplyr)
+library(arrow)
+library(ggplot2)
+library(lubridate)
+library(mgcv)
+library(mclust)
+library(randomForest)
+library(xgboost)
+library(BART)
+library(pROC)
+library(UniversalCVI)
+library(pheatmap)
+library(SHAPforxgboost)
+
+
+texas <- read_parquet("data/texas_accident.parquet")  # download link in README
+texas$Start_Time <- as.POSIXct(texas$Start_Time, format = "%Y-%m-%d %H:%M:%S")
+
+texas <- texas |> filter(City == "San Antonio")
+summary(texas)
+```
+
+
+  จากการจำนวนข้อมูลที่มีขนาดใหญ่และสัดส่วนของ class imbalance จึงจะมีการสุ่มข้อมูลบางส่วนและทำ over sampling ร่วม โดยการ สุ่ม 20% จาก row ที่ class = 1 และ 2 ,สุ่ม 50% จาก row ที่ class = 3 และ 4
+```{r}
+table(texas$Severity)
+
+set.seed(123)
+dat <- bind_rows(
+  texas |> 
+    filter(Severity %in% c(1,2)) |> 
+    slice_sample(prop = 0.2),
+
+  texas |> 
+    filter(Severity %in% c(3,4)) |> 
+    slice_sample(prop = 0.5)
+)
+
+```
+
+
+#### โดยจะได้สัดส่วน class ดังนี้
+```{r}
+table(dat$Severity)
+round(prop.table(table(dat$Severity)) * 100, 2)
+```
+
+
+
+
+## 2. Data Preprocessing for Classification
+
+  เลือกตัวแปรที่จะนำมาใช้งาน cleaning data และจากการที่ Severity 1 และ 4 (Class 1 และ 4) มีสัดส่วนที่น้อยแม้จะเป็นชุดข้อมูลก่อนมีการสุ่มบางส่วน (San Antonio Severity 1 รวม 4 ได้อยู่ที่ 670 case จาก  37,318) จึงจะรวม ระดับ Severity เหลือเพียง 2 class (0 = ไม่รุนแรง, 1 = รุนแรง) โดย class_0 = Severity 1+2, class_1 = Severity = 3+4 และ แปลงตัวแปร charactor ให้พร้อมสำหรับการนำไปใช้งาน
+  
+```{r}
+# Select relevant columns and remove NA
+texas_rf <- dat %>%
+mutate(Severity = as.factor(Severity)) %>%
+select(Severity, Start_Lat, Start_Lng, 21:46) %>%
+na.omit()
+
+# Convert logical/character/factor to numeric for ML
+
+texas_clean <- texas_rf %>%
+mutate(across(where(is.logical), as.numeric),
+across(where(is.character), ~ as.numeric(factor(.))),
+across(where(is.factor) & !matches("Severity"), ~ as.numeric(.))) %>%
+select(-Turning_Loop, -Weather_Condition, -Wind_Direction) %>%
+select(where(~ n_distinct(.) > 1) | Severity) %>%
+na.omit()
+
+# Convert twilight features
+
+texas_clean <- texas_clean %>%
+mutate(Sunrise_Sunset = Sunrise_Sunset - 1,
+Civil_Twilight = Civil_Twilight - 1,
+Nautical_Twilight = Nautical_Twilight - 1,
+Astronomical_Twilight = Astronomical_Twilight - 1)
+
+# Binary severity: 0 = low (1,2), 1 = high (3,4)
+
+texas_clean$Severity <- ifelse(texas_clean$Severity %in% c(1,2), 0, 1)
+```
+
+
+
+## 3. Unsupervise
+  ทำ PCA และ Kmeans
+  
+```{r}
+texas_pca <- prcomp(texas_clean |> select(-Severity) |> scale())
+plot(cumsum((texas_pca$sdev^2)/sum(texas_pca$sdev^2)), type = "b")
+
+
+pc_select <- which(cumsum(texas_pca$sdev^2/sum(texas_pca$sdev^2)) > 0.8)[1]
+
+texas_pca$rotation[, 1:pc_select]
+pheatmap(
+  texas_pca$rotation[, 1:pc_select],
+  scale = "row",
+  main = "PCA Loadings Heatmap"
+)
+```
+
+#### เลือกจำนวนกลุ่ม cluster  
+  จาก Hvalid (kmeans) และ FzzyCVIs (EM) ได้ผลว่า
+  kmeans เลือก 5 กลุ่ม จาก index = NCI ที่เป็นจุด Optimal
+  EM เลือก 5 กลุ่ม จาก index = KWON2
+  
+```{r}
+set.seed(123)
+plot_idx(Hvalid(texas_pca$x[,1:pc_select], 
+                kmin = 2, kmax = 10, nstart = 20,
+                indexlist = c("NC", "NCI", "DB", "DBs"),
+                method = "kmeans"))
+
+set.seed(123)
+plot_idx(FzzyCVIs(texas_pca$x[,1:pc_select], 
+                cmin = 2, cmax = 10,
+                indexlist = c("WPC", "WP", "XB","KWON2"),
+                method = "EM"))
+
+set.seed(123)
+em <- Mclust(texas_pca$x[,1:pc_select], G = 4)
+plot(texas_pca$x[,1:pc_select], 
+     col = em$classification,
+     pch = 19,
+     cex = 1)
+
+set.seed(123)
+km <- kmeans(texas_pca$x[,1:pc_select], 5)
+plot(texas_pca$x[,1:pc_select], 
+     col = km$cluster,
+     pch = 19,
+     cex = 1)
+
+
+texas_clean$em_cluster <-  as.factor(em$classification)
+texas_clean$km_cluster <-  as.factor(km$cluster)
+
+
+km$centers
+pheatmap(
+  t(km$centers),
+  scale = "row",
+  clustering_method = "complete",
+  main = "K-means Cluster Centers"
+)
+
+t(em$parameters$mean)
+pheatmap(
+  em$parameters$mean,
+  scale = "row",
+  clustering_method = "complete",
+  main = "EM Gaussian Means"
+)
+```
+
+
+### จากการสรุปผล cluster เทียบกับ PCA ตีความกลุ่ม cluster ได้ดังนี้
+#### ผล km_cluster
+km_Cluster 1
+  
+  PC1 = -0.387 → ต่ำ → อุณหภูมิ/Wind_Chill ต่ำ, twilight สูง
+  
+  PC2 = -1.496 → ต่ำ → Humidity/Pressure สูง, Temperature/Chill ต่ำ
+  
+  PC3 = -0.313 → ต่ำ → Bump/Traffic Calming ต่ำ → ถนนเรียบ/ไม่มีอุปสรรค
+  
+  PC4 = 0.493 → สูง → จุดตัด/Give_Way มาก
+  
+  PC5 = 0.291 → สูง → Visibility/amenity สูง
+
+Cluster 1 = สภาพอากาศเย็น, ถนนเรียบ, มีจุดตัดเยอะ, amenity สูง
+
+
+km_Cluster 2
+
+  PC1 = 0.849 → สูง → Temperature/Chill สูง, twilight ต่ำ
+  
+  PC2 = 0.223 → สูงเล็กน้อย → Temperature/Chill สูง, Humidity/Pressure ต่ำ
+  
+  PC4 = 0.778 → สูง → จุดตัด/Give_Way มาก
+  
+  PC8 = -1.650 → ต่ำ → Junction/Stop/amenity ต่ำ
+
+Cluster 2 = อากาศอุ่น, ถนนมีจุดตัดเยอะ, junction/stop/amenity น้อย
+
+
+km_Cluster 3
+
+  PC1 = 1.400 → สูงมาก → อากาศอุ่น, twilight ต่ำ
+  
+  PC2 = 0.442 → สูง → Temperature/Chill สูง, Humidity/Pressure ต่ำ
+  
+  PC4 = 0.082 → ปานกลาง → จุดตัด/traffic average
+  
+  PC8 = 0.150 → ปานกลาง → junction/stop/amenity ปานกลาง
+Cluster 3 = อากาศร้อน, ถนนธรรมดา, junction/stop ปานกลาง
+
+
+Km_Cluster 4
+
+  PC1 = 0.416 → สูง → Temperature/Chill สูง, twilight ต่ำ
+  
+  PC2 = -1.718 → ต่ำ → Humidity/Pressure สูง, Temperature ต่ำ
+  
+  PC4 = -4.573 → ต่ำมาก → จุดตัด/Give_Way ต่ำ → ถนนเรียบ/ไม่มีจุดตัด
+  
+  PC6 = 0.890 → สูง → Railway/Station/Stop สูง
+
+Cluster 4 = อากาศเย็น, ถนนไม่มีจุดตัด, มี railway/station/stop เยอะ
+
+
+Km_Cluster 5
+
+  PC1 = -3.742 → ต่ำมาก → Temperature/Chill ต่ำ, twilight สูง
+  
+  PC2 = 1.233 → สูง → Temperature/Chill สูง, Humidity/Pressure ต่ำ (ขัดกัน PC1 vs PC2)
+  
+  PC4 = -0.114 → ปานกลาง → จุดตัดน้อย
+  
+  PC6 = 0.099 → ปานกลาง → Railway/Stop/Station ปานกลาง
+
+Cluster 5 = อากาศเย็น/แปรปรวน, ถนนมีจุดตัดน้อย, railway/stop ปานกลาง
+
+#### ผล em_cluster
+EM Cluster 1
+  PC1 = 0.993 → สูง → Temperature/F, Wind_Chill สูง (อากาศร้อน/อบอุ่น), twilight ต่ำ
+  PC2 = -0.135 → ต่ำเล็กน้อย → Humidity/Pressure สูง, Temperature ต่ำเล็กน้อย
+  PC3 = -0.026 → ใกล้ 0 → Bump/Traffic Calming ปานกลาง
+  PC4 = 0.200 → สูงเล็กน้อย → จุดตัด/Give_Way มาก
+  PC5 = -0.072 → ต่ำ → Visibility/amenity ต่ำ
+EM Cluster 1 = อากาศอบอุ่น, ถนนธรรมดา, จุดตัดบางส่วน, visibility/amenity ต่ำ
+
+EM Cluster 2
+  PC1 = -0.500 → ต่ำ → Temperature/Chill ต่ำ, twilight สูง → อากาศเย็น
+  PC2 = -0.290 → ต่ำ → Humidity/Pressure สูง, Temperature ต่ำ → อากาศเย็น/ชื้น
+  PC3 = -0.139 → ต่ำ → Bump/Traffic Calming ต่ำ → ถนนเรียบ/ไม่มีอุปสรรค
+  PC5 = 0.417 → สูง → Visibility/amenity สูง
+  PC7 = -1.033 → ต่ำ → Wind_Speed, Start_Lat/Lng ส่งผล
+EM Cluster 2 = อากาศเย็น/ชื้น, ถนนเรียบ, visibility/amenity สูง, พฤติกรรมลม/ตำแหน่งมีผล
+
+EM Cluster 3
+  PC1 = -3.228 → ต่ำมาก → Temperature/Chill ต่ำ, twilight สูง → อากาศเย็นจัด
+  PC2 = 1.007 → สูง → Temperature/Chill สูง → แสดงความแปรปรวนใน cluster
+  PC3 = 0.134 → สูงเล็กน้อย → Bump/Traffic Calming สูง → มีอุปสรรคเล็กน้อย
+  PC6 = 0.059 → ใกล้ 0 → Railway/Stop ปานกลาง
+EM Cluster 3 = อากาศเย็น/แปรปรวน, ถนนมีอุปสรรคปานกลาง, railway/stop ปานกลาง
+
+EM Cluster 4
+  PC1 = 0.200 → ใกล้ 0 → Temperature/Chill ปานกลาง
+  PC2 = -1.488 → ต่ำมาก → Humidity/Pressure สูง, Temperature ต่ำ → อากาศเย็น/ชื้น
+  PC4 = -3.768 → ต่ำมาก → จุดตัด/Give_Way ต่ำ → ถนนเรียบ, จุดตัดน้อย
+  PC6 = 1.173 → สูง → Railway/Stop/Station สูง → มีระบบขนส่งชัดเจน
+  PC12 = -2.320 → ต่ำมาก → Civil/Nautical Twilight สูง → เวลากลางคืน/เช้ามีผล
+EM Cluster 4 = อากาศเย็น, ถนนเรียบ, จุดตัดน้อย, มี railway/station/stop เยอะ, twilight/เวลาของวัน
+
+
+### 4. Supervise
+  Random Forest 5-folds
+  XGboost 5-folds
+  BART 5-folds
+
+# Split train/test
+```{r}
+set.seed(123)
+train_index <- sample(1:nrow(texas_clean), size = 0.8 * nrow(texas_clean))
+train_texas <- texas_clean[train_index,]
+test_texas <- texas_clean[-train_index,]
+```
+
+
+## Random Forest Classification
+```{r}
+set.seed(123)
+zab <- train_texas
+k <- 5
+folds <- sample(1:k, nrow(zab), replace = TRUE)
+
+# เก็บผลลัพธ์ของแต่ละ fold
+precision_vec <- numeric(k)
+recall_vec    <- numeric(k)
+F1_vec        <- numeric(k)
+accuracy_vec  <- numeric(k)
+
+for(i in 1:k){
+  train_fold <- zab[folds != i, ]
+  test_fold  <- zab[folds == i, ]
+  
+  rf_mod <- randomForest(x = train_fold[, -1], y = train_fold$Severity, ntree = 300)
+  
+  pred <- predict(rf_mod, test_fold[, -1])
+  
+  cm <- table(Predicted = pred, Actual = test_fold$Severity)
+  
+  # ตรวจว่า TP/TN/FN/FP มีครบ
+  TP <- ifelse("1" %in% rownames(cm) & "1" %in% colnames(cm), cm["1","1"], 0)
+  FP <- ifelse("1" %in% rownames(cm) & "0" %in% colnames(cm), cm["1","0"], 0)
+  FN <- ifelse("0" %in% rownames(cm) & "1" %in% colnames(cm), cm["0","1"], 0)
+  TN <- ifelse("0" %in% rownames(cm) & "0" %in% colnames(cm), cm["0","0"], 0)
+  
+  precision_vec[i] <- ifelse(TP+FP==0, NA, TP/(TP+FP))
+  recall_vec[i]    <- ifelse(TP+FN==0, NA, TP/(TP+FN))
+  F1_vec[i]        <- ifelse(is.na(precision_vec[i]) | is.na(recall_vec[i]), NA, 2*precision_vec[i]*recall_vec[i]/(precision_vec[i]+recall_vec[i]))
+  accuracy_vec[i]  <- (TP+TN)/sum(cm)
+}
+
+# ค่าเฉลี่ยจากทุก fold
+rf_metrics <- list(
+  Precision = mean(precision_vec, na.rm=TRUE),
+  Recall    = mean(recall_vec, na.rm=TRUE),
+  F1        = mean(F1_vec, na.rm=TRUE),
+  Accuracy  = mean(accuracy_vec, na.rm=TRUE)
+)
+
+```
+
+
+## XGBoost Classification
+```{r}
+set.seed(123)
+k <- 5
+folds <- sample(1:k, nrow(train_texas), replace = TRUE)
+
+precision_vec <- numeric(k)
+recall_vec    <- numeric(k)
+F1_vec        <- numeric(k)
+accuracy_vec  <- numeric(k)
+
+for(i in 1:k){
+  train_fold <- train_texas[folds != i, ]
+  test_fold  <- train_texas[folds == i, ]
+  
+  # แปลง train เป็น matrix พร้อม dummy สำหรับ em_cluster & km_cluster
+  train_x <- model.matrix(~ . - Severity - Start_Lat - Start_Lng, data = train_fold)[,-1] # remove intercept
+  train_y <- as.numeric(train_fold$Severity)
+  
+  test_x <- model.matrix(~ . - Severity - Start_Lat - Start_Lng, data = test_fold)[,-1]
+  test_y <- as.numeric(test_fold$Severity)
+  
+  dtrain <- xgb.DMatrix(data = train_x, label = train_y)
+  dtest  <- xgb.DMatrix(data = test_x,  label = test_y)
+  
+  params <- list(objective = "binary:logistic",
+                 eval_metric = "logloss",
+                 eta = 0.2,
+                 max_depth = 8)
+  
+  xgb_mod <- xgb.train(params=params, data=dtrain, nrounds=200, verbose=0)
+  
+  pred_prob <- predict(xgb_mod, dtest)
+  pred <- ifelse(pred_prob > 0.25, 1, 0)
+  
+  cm <- table(Predicted = pred, Actual = test_y)
+  
+  TP <- ifelse("1" %in% rownames(cm) & "1" %in% colnames(cm), cm["1","1"], 0)
+  FP <- ifelse("1" %in% rownames(cm) & "0" %in% colnames(cm), cm["1","0"], 0)
+  FN <- ifelse("0" %in% rownames(cm) & "1" %in% colnames(cm), cm["0","1"], 0)
+  TN <- ifelse("0" %in% rownames(cm) & "0" %in% colnames(cm), cm["0","0"], 0)
+  
+  precision_vec[i] <- ifelse(TP+FP==0, NA, TP/(TP+FP))
+  recall_vec[i]    <- ifelse(TP+FN==0, NA, TP/(TP+FN))
+  F1_vec[i]        <- ifelse(is.na(precision_vec[i]) | is.na(recall_vec[i]), NA, 2*precision_vec[i]*recall_vec[i]/(precision_vec[i]+recall_vec[i]))
+  accuracy_vec[i]  <- (TP+TN)/sum(cm)
+}
+
+# ค่า metric เฉลี่ยจากทุก fold
+xgb_metrics <- list(
+  Precision = mean(precision_vec, na.rm=TRUE),
+  Recall    = mean(recall_vec, na.rm=TRUE),
+  F1        = mean(F1_vec, na.rm=TRUE),
+  Accuracy  = mean(accuracy_vec, na.rm=TRUE)
+)
+```
+
+
+
+## BART Classification
+```{r}
+set.seed(123)
+k <- 5
+folds <- sample(1:k, nrow(train_texas), replace = TRUE)
+
+precision_vec <- numeric(k)
+recall_vec    <- numeric(k)
+F1_vec        <- numeric(k)
+accuracy_vec  <- numeric(k)
+
+for(i in 1:k){
+  train_fold <- train_texas[folds != i, ]
+  test_fold  <- train_texas[folds == i, ]
+  
+  # แปลง factor -> numeric
+  train_x <- train_fold |>
+    select(-Severity,-Start_Lat,-Start_Lng) |>
+    mutate(
+      em_cluster = as.numeric(as.factor(em_cluster)),
+      km_cluster = as.numeric(as.factor(km_cluster))
+    ) |>
+    as.matrix()
+  train_y <- as.numeric(train_fold$Severity)
+  
+  test_x <- test_fold |>
+    select(-Severity,-Start_Lat,-Start_Lng) |>
+    mutate(
+      em_cluster = as.numeric(as.factor(em_cluster)),
+      km_cluster = as.numeric(as.factor(km_cluster))
+    ) |>
+    as.matrix()
+  test_y <- as.numeric(test_fold$Severity)
+  
+  bart_mod <- pbart(x.train=train_x, y.train=train_y, x.test=test_x,
+                    nskip=200, ndpost=500, ntree=400)
+  
+  pred_prob <- bart_mod$prob.test.mean
+  pred <- ifelse(pred_prob > 0.25, 1, 0)
+  
+  cm <- table(Predicted = pred, Actual = test_y)
+  
+  TP <- ifelse("1" %in% rownames(cm) & "1" %in% colnames(cm), cm["1","1"], 0)
+  FP <- ifelse("1" %in% rownames(cm) & "0" %in% colnames(cm), cm["1","0"], 0)
+  FN <- ifelse("0" %in% rownames(cm) & "1" %in% colnames(cm), cm["0","1"], 0)
+  TN <- ifelse("0" %in% rownames(cm) & "0" %in% colnames(cm), cm["0","0"], 0)
+  
+  precision_vec[i] <- ifelse(TP+FP==0, NA, TP/(TP+FP))
+  recall_vec[i]    <- ifelse(TP+FN==0, NA, TP/(TP+FN))
+  F1_vec[i]        <- ifelse(is.na(precision_vec[i]) | is.na(recall_vec[i]), NA, 2*precision_vec[i]*recall_vec[i]/(precision_vec[i]+recall_vec[i]))
+  accuracy_vec[i]  <- (TP+TN)/sum(cm)
+}
+
+# ค่า metric เฉลี่ยจากทุก fold
+bart_metrics <- list(
+  Precision = mean(precision_vec, na.rm=TRUE),
+  Recall    = mean(recall_vec, na.rm=TRUE),
+  F1        = mean(F1_vec, na.rm=TRUE),
+  Accuracy  = mean(accuracy_vec, na.rm=TRUE)
+)
+```
+
+## ตาราง สรุปผล 
+```{r}
+summary_df <- bind_rows(
+  RandomForest = as.data.frame(rf_metrics),
+  XGBoost      = as.data.frame(xgb_metrics),
+  BART         = as.data.frame(bart_metrics),
+  .id = "Model"
+)
+
+# ดูผลลัพธ์
+summary_df
+
+```
+
+
+
+# RESULT 
+### จากการที่ XGboost ให้ผล F1-score มากที่สุด และ ได้ accuracy ที่เกิน 50% จึงจะใช้ Xgboost ในการศึกษาตัวแปรต่อไป
+
+
+## 5. ดู feature importance ด้วย SHAP
+
+```{r}
+# Train final model
+dtrain_full <- xgb.DMatrix(data = train_x, label = train_y)
+params <- list(objective = "binary:logistic",
+               eval_metric = "logloss",
+               eta = 0.2,
+               max_depth = 8)
+
+xgb_final <- xgb.train(params = params, data = dtrain_full, nrounds=200, verbose=0)
+
+# SHAP values
+shap_values <- xgb.importance(feature_names = colnames(train_x), model = xgb_final)
+
+# ดู top 20 features
+xgb.plot.importance(shap_values[1:20,])
+
+# สร้าง SHAP matrix
+shap_long <- shap.prep(xgb_model = xgb_final, X_train = train_x)
+
+# summary plot
+shap.plot.summary(shap_long)
+```
+
+ ได้ผลว่า top 5 ตัวแปรสำคัญที่ model ใช้ในการทำนายคือ 
+  1.) Humidity(%)		ความชื้นสัมพัทธ์ (%)
+    โดย ยิ่่งความชื้นสัมพัทธ์ "น้อย" โอกาสที่จะเกิดอุบัติเหตุรุนแรงจะมีมากขึ้น
+  2.) Pressure(in)		ความดันอากาศ (นิ้วปรอท)   
+  แม้จะไม่สามารถตีความได้อย่างชัดเจน แต่จะพบว่า เมื่อเจอค่าความดันที่"สูง" โอกาสที่จะเกิดอุบัติเหตุรุนแรงจะมีมากขึ้น
+  3.) Temperature(F)		 อุณหภูมิ (ฟาเรนไฮต์) 
+  ยิ่ง อุณหภูมิ "สูง" โอกาสที่จะเกิดอุบัติเหตุรุนแรงจะมีมากขึ้น
+  4.) Wind_Speed(mph)	ความเร็วลม (ไมล์ต่อชั่วโมง) 
+  ยิ่ง ความเร็วลม "สูง" โอกาสที่จะเกิดอุบัติเหตุรุนแรงจะยิ่งมากขึ้น
+  5.) Traffic_Signal		มีสัญญาณไฟจราจรอยู่ใกล้หรือไม่
+  ได้ว่า มีความคลุมเครือ ทั้ง เมื่อมีไม่มีสัญญาณไฟ(สีเหลือง) และ เมื่อมีสัญญาณไฟ (สีน้ำเงิน) ทำให้ xgboost เลือกที่จะทำนาย class ในสัดส่วนที่พอกัน โดยจากการตีความเพิ่มเติม จะพบว่า เมื่อมี traffic signal อุบัติเหตุจะมีทั้งรุนแรงและไม่รุนแรง หากมองในมุมของบริบทความเป็นจริง จุดที่มี traffic signal มักเป็นจุดสำคัญที่อาจเคยเกิดอุบัติเหตุบ่อย หรือเป็นจุดสำคัญที่ รัฐเล็งเห็นถึงความเสี่ยง จึงต้องมีการสร้างสัญญาณไป และเมื่อมีสัญญาณไฟความระมัดระวังของการขับขี่จะสูงมากยิ่งขึ้น แต่ในขณะเดียวกัน ก็จะมีผู้ที่ไม่ได้เคารพกฎการจราจรหรืออาจเป็นจุดที่เสี่ยงเกิดอุบัติเหตุอยู่แล้ว (ตามที่รัฐเห็นปัญหา) ณ จุดนี้  model จึง 50/50 ในการทำนาย
+  
+  
+## 6. Waittime จุดสำคัญ 
+  จากการทำนายผลและวิเคราะห์ตัวแปรแล้ว จะเลือก จุด 3 จุด ที่เทียบเคียงโอกาสเกิดอุบัติเหตุรุนแรงได้ 3 จุด คือ 
+  1.) Junction		อยู่ใกล้สี่แยกหรือไม่
+  2.) Traffic_Signal		มีสัญญาณไฟจราจรอยู่ใกล้หรือไม่
+  3.) Crossing		มีทางข้ามถนนอยู่ใกล้หรือไม่
+โดยจะนำจุดเกิดเหตุเหล่านี้มาใช้ในการหา waittime ในการเกิดอุบัติเหตุในครั้งต่อไป
+
+```{r}
+compute_wait_time <- function(df) {
+  df %>% 
+    mutate(wait_hours = as.numeric(difftime(End_Time, Start_Time, units = "hours")))
+}
+
+# แยกตามจุดสำคัญ
+junc_df <- dat %>% filter(Junction == 1) 
+traffic_df <- dat %>% filter(Traffic_Signal == 1)
+crossing_df <- dat %>% filter(Crossing == 1)
+
+# คำนวณ wait time
+junc_df <- compute_wait_time(junc_df)
+traffic_df <- compute_wait_time(traffic_df)
+crossing_df <- compute_wait_time(crossing_df)
+
+# ฟังก์ชันสรุป wait time และเพิ่ม column ประเภทจุด
+summarize_wait <- function(df, type_name) {
+  df %>%
+    summarize(
+      count = n(),
+      mean_wait = mean(wait_hours, na.rm = TRUE),
+      median_wait = median(wait_hours, na.rm = TRUE),
+      sd_wait = sd(wait_hours, na.rm = TRUE),
+      min_wait = min(wait_hours, na.rm = TRUE),
+      max_wait = max(wait_hours, na.rm = TRUE)
+    ) %>%
+    mutate(point_type = type_name) %>%
+    select(point_type, everything())
+}
+
+# สร้าง data frame ของแต่ละประเภท
+junc_summary <- summarize_wait(junc_df, "Junction")
+traffic_summary <- summarize_wait(traffic_df, "Traffic_Signal")
+crossing_summary <- summarize_wait(crossing_df, "Crossing")
+
+# รวมเป็น data frame เดียว
+wait_summary_df <- bind_rows(junc_summary, traffic_summary, crossing_summary)
+
+# ดูผลลัพธ์
+wait_summary_df
+```
+
+```{r}
+ggplot(junc_df, aes(x = wait_hours)) +
+  geom_histogram(binwidth = 0.5, fill="skyblue", color="black") +
+  labs(title="Wait Time Distribution at Junctions", x="Wait Time (hours)", y="Count") +
+  theme_minimal()
+
+ggplot(traffic_df, aes(x = wait_hours)) +
+  geom_histogram(binwidth = 0.5, fill="green3", color="black") +
+  labs(title="Wait Time Distribution at Traffic_Signal", x="Wait Time (hours)", y="Count") +
+  theme_minimal()
+
+ggplot(crossing_df, aes(x = wait_hours)) +
+  geom_histogram(binwidth = 0.5, fill="pink2", color="black") +
+  labs(title="Wait Time Distribution at Crossing", x="Wait Time (hours)", y="Count") +
+  theme_minimal()
+```
+

@@ -1,0 +1,533 @@
+---
+title: "Full Report"
+author: "65090502414 ธนวินท์ แสงวิสุทธิ์ 65090502417 ปิยพัทธ์ จันทร์ทวี"
+date: "2025-05-28"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+## Load Required Libraries
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(imager)
+library(mvtnorm)
+library(e1071)
+library(mclust)
+library(UniversalCVI)
+library(BayesCVI)
+library(corrplot)
+library(psych)
+library(glmnet)
+library(factoextra)
+library(caret)
+library(randomForest)
+library(xgboost)
+library(performanceEstimation)
+library(smotefamily)
+library(MASS)
+library(Ckmeans.1d.dp)
+
+```
+
+## Load and Prepare the Data
+#### ชุดข้อมูล IBM HR Analytics มีจำนวนข้อมูล 1058 คน โดยมีทั้งข้อมูลเชิงปริมาณและเชิงคุณภาพ ซึ่งครอบคลุมข้อมูลเกี่ยวกับอายุ ระยะเวลาการทำงาน ความพึงพอใจในงาน รายได้ และอื่น ๆ ลบตัวแปรที่ไม่มีความแปรปรวน (เช่น Over18, StandardHours, EmployeeCount, Employee Number) ออกจากชุดข้อมูล
+```{r}
+ibm <- read.csv("data/IBM_train.csv")
+sum(is.na(ibm))
+str(ibm)
+colnames(ibm)
+
+# Remove non-informative columns
+ibm <- ibm[,-c(9,10,22,27)]
+
+# Separate categorical and numeric variables
+ibm_cate <- ibm[,c('BusinessTravel', 'Department', 'EducationField', 'Gender', 'JobRole', 'MaritalStatus', 'OverTime')]
+ibm_num <- ibm[,c('Age', 'Attrition', 'DailyRate', 'DistanceFromHome', 'Education',
+                  'EnvironmentSatisfaction', 'HourlyRate', 'JobInvolvement', 'JobLevel', 'JobSatisfaction',
+                  'MonthlyIncome', 'MonthlyRate', 'NumCompaniesWorked', 'PercentSalaryHike', 'PerformanceRating',
+                  'RelationshipSatisfaction', 'StockOptionLevel', 'TotalWorkingYears', 'TrainingTimesLastYear',
+                  'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole', 'YearsSinceLastPromotion',
+                  'YearsWithCurrManager')]
+dim(ibm)
+
+```
+
+
+
+## Train/Test Split and One-hot Encoding
+#### แบ่งข้อมูลออกเป็น training set 80% และ test set 20% และแปลงข้อมูลประเภท categorical ด้วย model.matrix()
+```{r}
+ibm$Attrition <- as.factor(ibm$Attrition)
+
+set.seed(2417)
+train_idx <- sample(1:dim(ibm)[1], size = 0.8*dim(ibm)[1])
+ibm_train <- ibm[train_idx, ]
+ibm_test <- ibm[-train_idx, ]
+
+ibm_mat <- model.matrix(Attrition~., data = ibm_train)
+ibm_mat_att <- data.frame(Attrition = as.factor(ibm_train$Attrition), ibm_mat[,-1])
+
+test_mat <- model.matrix(Attrition~., data = ibm_test)
+mat_test <- data.frame(Attrition = as.factor(ibm_test$Attrition), test_mat[,-1])
+
+dim(ibm_mat_att)
+dim(mat_test)
+
+table(ibm_mat_att$Attrition)
+table(mat_test$Attrition)
+
+```
+
+## Balance the Dataset with BLSMOTE
+#### จากการที่จุดประสงค์คือการสร้างตัวแบบที่ใช้ในทำนายการลาออกของพนักงานจึงใช้ BLSMOTE ในการแก้ไขความไม่สมดุลของ ตัวแปร target(ในที่นี้คือการลาออกของพนักงาน "Attrition") และใช้ชุดข้อมูลการ smote ปรับให้เข้ากับ argument ของ function ในแต่ละ model
+```{r}
+sm <- BLSMOTE(ibm_mat_att[,-1], ibm_mat_att$Attrition, K = 7 , C = 3)
+smt <- sm$data
+
+table(smt$class)
+
+smt_rf <- smt
+smt_rf$class <- as.factor(smt_rf$class)
+
+smt_xg <- smt
+smt_xg$class <- ifelse(as.numeric(as.character(smt_xg$class)) == 1, 1, 0)
+
+smt_logis <- smt
+smt_logis$class <- as.factor(smt_logis$class)
+
+
+
+```
+
+# --------------------
+## สร้างตัวแบบเพื่อใช้ในการหาตัวแบบที่ดีที่สุดในการทำนายการลาออก
+### 1.) Random Forest
+### 2.) XGBoost
+### 3.) Logistic Regression
+# --------------------
+
+## Random Forest CV
+```{r include=FALSE}
+rf_cv <- function(data, target_var, n_iter = 10, test_size = 0.2) {
+  acc <- prec <- rec <- f1 <- c()
+  for (i in 1:n_iter) {
+    set.seed(i)
+    train_idx <- sample(1:nrow(data), size = floor((1 - test_size) * nrow(data)))
+    train <- data[train_idx, ]
+    test <- data[-train_idx, ]
+    rf_model <- randomForest(as.formula(paste(target_var, "~ .")), data = train, ntree = 100)
+    pred <- predict(rf_model, test)
+    cm <- confusionMatrix(pred, test[[target_var]])
+    acc[i] <- cm$overall["Accuracy"]
+    prec[i] <- cm$byClass["Precision"]
+    rec[i] <- cm$byClass["Recall"]
+    f1[i] <- cm$byClass["F1"]
+  }
+  data.frame(Accuracy = mean(acc), Precision = mean(prec), Recall = mean(rec), F1_Score = mean(f1))
+}
+rf_result <- rf_cv(smt_rf, "class")
+rf_result
+```
+
+
+## XGBoost CV
+```{r include=FALSE}
+xgb_cv <- function(data, target_var, n_iter = 10, test_size = 0.2) {
+  acc <- prec <- rec <- f1 <- c()
+  for (i in 1:n_iter) {
+    set.seed(i)
+    idx <- sample(1:nrow(data), size = floor((1 - test_size) * nrow(data)))
+    train <- data[idx, ]
+    test <- data[-idx, ]
+    dtrain <- xgb.DMatrix(data = as.matrix(train[,-which(names(train)==target_var)]), label = train[[target_var]])
+    dtest <- xgb.DMatrix(data = as.matrix(test[,-which(names(test)==target_var)]), label = test[[target_var]])
+    xgb_model <- xgboost(data = dtrain, nrounds = 100, objective = "binary:logistic", verbose = 0)
+    pred <- ifelse(predict(xgb_model, dtest) > 0.5, 1, 0)
+    cm <- confusionMatrix(as.factor(pred), as.factor(test[[target_var]]))
+    acc[i] <- cm$overall["Accuracy"]
+    prec[i] <- cm$byClass["Precision"]
+    rec[i] <- cm$byClass["Recall"]
+    f1[i] <- cm$byClass["F1"]
+  }
+  data.frame(Accuracy = mean(acc), Precision = mean(prec), Recall = mean(rec), F1_Score = mean(f1))
+}
+xgb_result <- xgb_cv(smt_xg, "class")
+xgb_result
+
+```
+
+
+## Logistic Regression with Subset Selection
+```{r include=FALSE}
+logistic_cv <- function(data, target_var, method = c("full", "forward", "backward", "stepwise"), n_iter = 5, test_size = 0.2) {
+  acc <- prec <- rec <- f1 <- c()
+  method <- match.arg(method)
+  for (i in 1:n_iter) {
+    set.seed(i)
+    idx <- sample(1:nrow(data), size = floor((1 - test_size) * nrow(data)))
+    train <- data[idx, ]
+    test <- data[-idx, ]
+    full_model <- glm(as.formula(paste(target_var, "~ .")), data = train, family = binomial)
+    final_model <- switch(method,
+                          full = full_model,
+                          forward = step(glm(as.formula(paste(target_var, "~ 1")), data = train, family = binomial),
+                                         scope = list(lower = ~1, upper = formula(full_model)), direction = "forward", trace = 0),
+                          backward = step(full_model, direction = "backward", trace = 0),
+                          stepwise = step(glm(as.formula(paste(target_var, "~ 1")), data = train, family = binomial),
+                                          scope = list(lower = ~1, upper = formula(full_model)), direction = "both", trace = 0))
+    pred <- ifelse(predict(final_model, newdata = test, type = "response") > 0.5, 1, 0)
+    cm <- confusionMatrix(as.factor(pred), test[[target_var]])
+    acc[i] <- cm$overall["Accuracy"]
+    prec[i] <- cm$byClass["Precision"]
+    rec[i] <- cm$byClass["Recall"]
+    f1[i] <- cm$byClass["F1"]
+  }
+  data.frame(SubsetMethod = method, Accuracy = mean(acc), Precision = mean(prec), Recall = mean(rec), F1_Score = mean(f1))
+}
+
+logi_results <- rbind(
+  logistic_cv(smt_logis, "class", method = "full"),
+  logistic_cv(smt_logis, "class", method = "forward"),
+  logistic_cv(smt_logis, "class", method = "backward"),
+  logistic_cv(smt_logis, "class", method = "stepwise")
+)
+logi_results
+```
+
+Performance Results
+## เทียบผลทุกตัวแบบด้วยการพิจารณา F1-Score เนื่องจาก จุดประสงค์คือการได้มาซึ่งการทำนายผู้ที่มีแนวโน้มที่จะลาออก และตัวแปรที่มีอิทธิพล จึงจะเลือก ตัวแบบที่ให้ผลทั้งในด้านความสามารถในการจับตัวแบบ หรือ Precision (จากการทำนายว่าลาออก เป็นผู้ที่ลาออกอยู่จริงอยู่สัดส่วนเท่าใด) และ ในด้านความถูกต้องของการทำนาย หรือ Recall (จากข้อมูลผู้ลาออกจริงทั้งหมด เป็นผู้ที่ลาออกอยู่จริงเป็นสัดส่วนเท่าใด)
+## ด้วยเหตุนี้จึงเลือก พิจารณา ค่า F1-Score ที่เป็นค่าที่ให้ความสำคัญกับทั้ง Precision และ Recall
+## ได้ว่า Random Forest ให้ค่า F1-Scorwe ที่มากที่สุด
+```{r}
+rf_result
+xgb_result
+logi_results
+```
+
+```{r}
+best_model <-rf_cv(mat_test, "Attrition")
+best_model
+```
+
+## Feature Importance
+### จากการที่ประสิทธิภาพของ Random Forest และ XGBoost อยู่ในระดับที่ใกล้เคียงกัน จึงจะนำ Feature ที่สำคัญจากทั้ง 2 ตัวแบบมาใช้ในการคัดเลือกตัวแปรที่มีอิทธิพลต่อการลาออกของพนักงาน IBM
+```{r include=FALSE}
+rf_model <- randomForest(class ~ ., data = smt_rf, ntree = 100, importance = TRUE)
+importance(rf_model)
+
+dtrain <- xgb.DMatrix(data = as.matrix(smt_xg[,-ncol(smt_xg)]), label = smt_xg$class)
+xgb_model <- xgboost(data = dtrain, nrounds = 100, objective = "binary:logistic", verbose = 0)
+xgb_imp <- xgb.importance(feature_names = colnames(smt_xg)[-ncol(smt_xg)], model = xgb_model)
+```
+
+```{r}
+varImpPlot(rf_model)
+xgb.ggplot.importance(xgb_imp) + scale_fill_manual(values = rep("black", nrow(xgb_imp))) + theme_minimal()
+```
+
+
+## Clustering Based on Important Features
+### เลืกที่จะใช้ PCA ในการลดจำนวนตัวแปรที่ได้จากการ รวม top 10 ตัวแปรที่สำคัญจากทั้ง Randomforest และ XGBoost
+```{r}
+# Select top features
+top_xgb <- head(xgb_imp$Feature, 10)
+
+imp_rf <- importance(rf_model)
+top_rf <- rownames(imp_rf[order(imp_rf[, 1], decreasing = TRUE), ])[1:10]
+
+# จัดเรียงเฉพาะตาม MeanDecreaseAccuracy ของ class "1"
+top_rf <- rownames(imp_rf[order(imp_rf[, "1"], decreasing = TRUE), ])[1:5]
+top_rf
+
+
+selected_features <- union(top_rf,top_xgb)
+selected_features
+
+data_clustering <- mat_test[, selected_features]
+data_scaled <- scale(data_clustering)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev ^ 2
+cumu <- cumsum(pca_var/sum(pca_var))
+plot(cumu, type ="b")
+best_pc <- which(cumu > 0.8)
+
+pca_data <- as.data.frame(pca_res$x[, 1:best_pc])
+
+```
+
+## อธิบายแต่ละตัวแปรที่อาจมีอิทธิพลต่อการลาออกของพนักงาน
+
+"OverTimeYes"             พนักงานทำงานล่วงเวลา (แสดงถึงการทุ่มเทแรงและเวลาให้กับการทำงานและบริษัท)
+
+"MonthlyRate"               รายได้รายเดือนพนักงาน (ในบริบทขอผู้ที่มีแนวโน้มจะลาออก อาจมีปัจจัยมาจากด้านรายได้ เนื่องจาก เงินถือเป็นปัจจัยที่สำคัญต่อการดำเนินชีวิต)
+
+"JobInvolvement"           ความมีส่วนร่วมกับงาน (ในบริบทขอผู้ที่มีแนวโน้มจะลาออก อาจขาดส่วนร่วมกับงานที่ทำหรือได้รับมอบหมาย กล่าวคือขาดแรงจูงใจและอารมณ์ร่วมกับงาน)
+
+"DailyRate"                 รายได้รายวัน
+
+"JobSatisfaction"          ความพึงพอใจกับงาน (ในบริบทขอผู้ที่มีแนวโน้มจะลาออก อาจเป็นผู้ที่ไม่ได้พึงพอใจกับงานที่ได้รับ อาจเป็นลักษณะเนื้องาน หรือสายงานที่ไม่ตรงตามความถนัด)
+
+"StockOptionLevel"         ระดับการถือหุ้นในองค์กร (ในบริบทของเงินว่าจ้างในอเมริกาของบริษัทใหญ่ เงินเดือนพนักงานจะมีในส่วนของ เงินเดือน + สัดส่วนหุ้นบริษัทในที่นี้คือ IBM กล่าวคือ ยิ่งมีระดับหุ้นที่สูงพนักงานผู้นั้นมีแนวโน้มที่จะมีเงินเดือนที่เยอะ และอาจเป็นผู้ที่ ผลงานที่ดีกับบริษัท)
+
+"JobLevel"                 ระดับตำแหน่งของพนักงาน (ยิ่งอยู่ในระดับที่สูงสื่อถึง ผู้ที่อิทธิพล อาจเป็นพนักงานหรือเป็นบุคคลที่มีความสำคัญกับบริษัทหรือองค์กรณ์)
+
+"MaritalStatusSingle"       มีสถานะไม่มีคู่ครอง (สถานการณ์สมรสอาจแสดงถึง ภาระทางครอบครัว ที่หากมีคู่สมรส อาจหมายถึง มีครอบครัวที่จำต้องดูแล ในบริบทของการลาออกนั้นคือ หากพนักงานที่มีครอบครัวจำเป็นต้องลาออก พนักงานอาจขาดรายได้และอาจมีผลกระทบกับครอบครัว)
+
+"EnvironmentSatisfaction”   ความพึงพอใจในสิ่งแวดล้อมในที่ทำงาน (แสดงถึงความพึงพอใจกับสภาพแวดล้อม ในที่นี้อาจหมายถึง ตำแหน่งที่ตั้ง ลักษณะทางกายภาพ ของบริษัท หรือ อาจหมายถึง สภาพแวดล้อมด้านเพื่อนร่วมงาน หรือบุคคลที่เกี่ยวข้องกับสถานที่ของบริษัท)
+
+"JobRoleResearch.Scientist" พนักงานตำแหน่ง นักวิทยาศาตสร์เชิงการวิจัย
+
+
+## K-means หรือ Hierarchical Clustering
+```{r}
+k_check <- 1:15
+for (i in 1:15){
+  km <- kmeans(pca_data, centers = i, nstart = 100)
+  k_check[i] <- km$tot.withinss
+}
+plot(k_check, type = "b", main = "Total Within-SS for Different K", xlab = "Number of Clusters", ylab = "Total Within-Cluster Sum of Squares")
+
+hc_com <- hclust(dist(pca_data), method = "complete")
+hc_avg <- hclust(dist(pca_data), method = "average")
+hc_sin <- hclust(dist(pca_data), method = "single")
+
+plot(hc_com, main = "Complete Linkage")
+plot(hc_avg, main = "Average Linkage")
+plot(hc_sin, main = "Single Linkage")
+
+
+```
+
+## Cluster Validation
+```{r include=FALSE}
+cvi_km <- Hvalid(pca_data, kmax = 10, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"),
+                 method = "kmeans", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+
+cvi_c <- Hvalid(pca_data, kmax = 10, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"),
+                method = "hclust_complete", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+
+cvi_a <- Hvalid(pca_data, kmax = 10, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"),
+                method = "hclust_average", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+
+cvi_s <- Hvalid(pca_data, kmax = 2, kmin = 2, indexlist = c("NCI", "DI", "DB", "DBs", "CSL", "CH"),
+                method = "hclust_single", p = 2, q = 2, corr = "pearson", nstart = 100, NCstart = TRUE)
+```
+
+```{r}
+par(mfrow = c(1,1))
+plot_idx(cvi_km)
+plot_idx(cvi_c)
+plot_idx(cvi_a)
+plot_idx(cvi_s)
+
+```
+
+## Cluster Visualization
+```{r}
+set.seed(123)
+k <- 4
+kmeans_res <- kmeans(pca_data, centers = k)
+fviz_cluster(kmeans_res, data = pca_data, ellipse.type = "convex", geom = "point", palette = "jco")
+
+fviz_cluster(list(data = pca_data, cluster = cutree(hc_com, k = 4)), ellipse.type = "convex", geom = "point", palette = "jco")
+fviz_cluster(list(data = pca_data, cluster = cutree(hc_avg, k = 3)), ellipse.type = "convex", geom = "point", palette = "jco")
+fviz_cluster(list(data = pca_data, cluster = cutree(hc_sin, k = 3)), ellipse.type = "convex", geom = "point", palette = "jco")
+
+```
+
+## Feature Importance per Cluster เลือก Kmeans = 3 (จากการวิเคราะห์ Hvalid และ รูปแบบของกราฟ)
+```{r}
+loadings <- pca_res$rotation[, 1:best_pc]
+centers_pca <- kmeans_res$centers
+centers_orig <- centers_pca %*% t(loadings)
+centers_orig <- as.data.frame(centers_orig)
+rownames(centers_orig) <- paste0("Cluster", 1:nrow(centers_orig))
+
+par(mfrow = c(1, 1))
+for (i in 1:4) {
+  cluster_values <- centers_orig[paste0("Cluster", i), ]
+  cluster_vector <- as.numeric(cluster_values)
+  names(cluster_vector) <- colnames(centers_orig)
+  sorted_values <- sort(cluster_vector, decreasing = TRUE)
+  
+  barplot(height = sorted_values,
+          names.arg = names(sorted_values),
+          las = 2,
+          cex.names = 0.6,
+          cex.axis = 0.7,
+          main = paste("Cluster", i, "Feature Importance"),
+          col = "steelblue",
+          space = 0.3,
+          horiz = 1)
+  print(sorted_values)
+}
+
+```
+
+
+## Class Distribution in Each Cluster
+```{r}
+clus1 <- mat_test[kmeans_res$cluster == 1, ]
+clus2 <- mat_test[kmeans_res$cluster == 2, ]
+clus3 <- mat_test[kmeans_res$cluster == 3, ]
+clus4 <- mat_test[kmeans_res$cluster == 4, ]
+
+
+
+par(mfrow = c(1,4))
+
+barplot(table(clus1$Attrition), names.arg = c("Exist", "Attrited"), col = c("green","red"), main = "Cluster 1")
+barplot(table(clus2$Attrition), names.arg = c("Exist", "Attrited"), col = c("green","red"), main = "Cluster 2")
+barplot(table(clus3$Attrition), names.arg = c("Exist", "Attrited"), col = c("green","red"), main = "Cluster 3")
+barplot(table(clus4$Attrition), names.arg = c("Exist", "Attrited"), col = c("green","red"), main = "Cluster 4")
+
+table(clus1$Attrition)
+table(clus2$Attrition)
+table(clus3$Attrition)
+table(clus4$Attrition)
+
+table(clus1$Attrition)[2]/sum(table(clus1$Attrition))
+table(clus2$Attrition)[2]/sum(table(clus2$Attrition))
+table(clus3$Attrition)[2]/sum(table(clus3$Attrition))
+table(clus4$Attrition)[2]/sum(table(clus4$Attrition))
+```
+
+
+
+## แปลผลแต่ละกลุ่มเทียบกับ สัดส่วนการลาออกของพนักงานในแต่ละกลุ่ม cluster
+
+### สรุป Cluster ที่ 1
+
+จำนวนพนักงานในกลุ่ม: 41 คน
+
+จำนวนพนักงานที่ลาออก (Attrition = 1): 7 คน คิดเป็น 17.07%
+
+JobRoleResearch.Scientist	+1.45	พนักงานในกลุ่มนี้ส่วนใหญ่มีตำแหน่งเป็นนักวิจัย
+
+MaritalStatusSingle	+0.41	ส่วนใหญ่ยังไม่มีครอบครัว (โสด) อาจมีความยืดหยุ่นในการทำงานและความรับผิดชอบต่อชีวิตครอบครัวหรือชีวิตส่วนตัวต่ำ
+
+OverTimeYes	+0.32	กลุ่มนี้มีแนวโน้ม ทำงานล่วงเวลา (OT) ซึ่งแสดงถึงความทุ่มเท หรือความพร้อมในการทำงานเกินเวลา
+
+JobSatisfaction	+0.24	ระดับความพึงพอใจในงานอยู่ในเกณฑ์มากกว่าค่าเฉลี่ย สะท้อนถึงการยอมรับในลักษณะงานที่ทำ
+
+JobInvolvement	+0.16	พนักงานในกลุ่มนี้มี ส่วนร่วมกับงานในระดับหนึ่ง ซึ่งสัมพันธ์กับความผูกพันต่อองค์กร แรงจูงใจ และอารมณ์ร่วมกับงาน
+
+DailyRate	-0.04	รายได้รายวันอยู่ใกล้ค่าเฉลี่ย ไม่มีนัยสำคัญ
+
+EnvironmentSatisfaction	-0.10	ความพึงพอใจต่อสิ่งแวดล้อมในที่ทำงานต่ำเล็กน้อย 
+
+StockOptionLevel	-0.11	สิทธิในการถือหุ้นอยู่ในระดับต่ำกว่าค่าเฉลี่ยเล็กน้อย
+
+MonthlyRate	-0.48	รายได้รายเดือนอยู่ในระดับต่ำกว่าค่าเฉลี่ย
+
+  ทำงานในสายวิชาการ/วิจัย (Research Scientist) มักยังไม่มีครอบครัวหรือชีวิตแต่งงาน ทุ่มเทกับงาน (ทำ OT, Job Involvement สูงในระดับหนึ่ง) พึงพอใจกับเนื้องานแม้รายได้และตำแหน่งจะอยู่ในระดับต่ำ 
+จากการที่รายได้และตำแหน่งจะอยู่ในระดับต่ำ แต่ความพึงพอใจและความเชี่ยวชาญเฉพาะตัวในบทบาทที่ตนเองทำ ส่งผลให้มี แรงจูงใจภายใน (intrinsic motivation) สูง ซึ่งสะท้อนถึงแนวโน้มการลาออกที่ต่ำ
+
+
+### สรุป Cluster ที่ 2
+
+จำนวนพนักงานในกลุ่ม: 55 คน
+
+จำนวนพนักงานที่ลาออก: 21 คน คิดเป็น 38.18% (มากที่สุดในทั้ง 4 กลุ่ม)
+
+MaritalStatusSingle	+0.685	ส่วนใหญ่ยังไม่มีครอบครัว (โสด) อาจมีความยืดหยุ่นในการทำหรือเลือกงานและความรับผิดชอบต่อชีวิตครอบครัวหรือชีวิตส่วนตัวต่ำ
+
+JobLevel	+0.154	ตำแหน่งงานในกลุ่มนี้สูงกว่าค่าเฉลี่ย ซึ่งอาจบ่งชี้ถึงประสบการณ์หรือบทบาทสำคัญบางประการ
+
+DailyRate	+0.142	ได้รับค่าตอบแทนรายวัน ในระดับค่อนข้างดีกว่าค่าเฉลี่ย
+
+OverTimeYes	-0.149	มีแนวโน้ม ไม่ทำงานล่วงเวลา หรือปฏิเสธการทำงานเกินเวลา
+
+MonthlyRate	-0.192	รายได้รายเดือนอยู่ในระดับค่อนข้างต่ำ
+
+EnvironmentSatisfaction	-0.259	ความพึงพอใจในสภาพแวดล้อมการทำงาน ต่ำ อาจไม่พอใจกับสถานที่/เพื่อนร่วมงาน/ระบบองค์กร
+
+obRoleResearch.Scientist	-0.282	กลุ่มนี้ ไม่น่าจะเป็นนักวิจัย แสดงถึงตำแหน่งงานอื่น ๆ ที่ไม่เน้นวิชาการ
+
+JobSatisfaction	-0.520	ความพึงพอใจในงาน ต่ำมาก เป็นสัญญาณสำคัญของการลาออก
+
+JobInvolvement	-0.758	ขาดความมีส่วนร่วมกับงานที่ทำ ขาคแรงจูงใจและส่วนร่วมทางอารมณ์ในระดับที่ สูงมาก อาจรู้สึกว่าไม่ได้มีบทบาทสำคัญหรือไม่ผูกพันกับองค์กร
+
+StockOptionLevel	-0.776	ได้รับสิทธิถือหุ้นในระดับ ต่ำมาก สื่อถึงรายได้โดยรวมที่ควรจะได้กับทางบริษัทอยู่ในระดับที่ต่ำ
+
+#### **กลายเป็นกลุ่มที่มีแน้วโน้มที่จะลาออกมากที่สุดจากทั้ง 4 กลุ่ม โดยจะสรุปกลุ่มนี้ในส่วนสุดท้ายของ Report
+
+### สรุป Cluster ที่ 3
+
+จำนวนพนักงานในกลุ่ม: 70 คน
+
+จำนวนที่ลาออก (Attrition = 1): 8 คน คิดเป็น 11.43%
+
+StockOptionLevel	+0.715	พนักงานกลุ่มนี้ได้รับสิทธิถือหุ้นในองค์กร ระดับสูงมาก ซึ่งเป็นแรงจูงใจสำคัญในการอยู่กับองค์กร
+
+EnvironmentSatisfaction	+0.561	พึงพอใจในสิ่งแวดล้อมการทำงานสูง สะท้อนถึงความรู้สึกดีต่อสถานที่ทำงาน เพื่อนร่วมงาน หรือวัฒนธรรมองค์กร
+
+JobLevel	+0.472	ตำแหน่งงานอยู่ในระดับค่อนข้างสูง บ่งบอกถึงความมั่นคงหรือบทบาทสำคัญในองค์กร
+
+OverTimeYes	+0.417	ยินดีทำงานล่วงเวลา แสดงถึงความทุ่มเทหรือความผูกพันกับงาน
+
+MonthlyRate	+0.218	รายได้รายเดือนในระดับดี
+
+JobInvolvement	+0.120	มีส่วนร่วมกับงานในระดับหนึ่ง
+
+JobSatisfaction	+0.106	มีความพึงพอใจกับลักษณะงานที่ทำ
+
+DailyRate	+0.086	รายได้รายวันอยู่ในเกณฑ์ดี
+
+JobRoleResearch.Scientist	-0.385	กลุ่มนี้ไม่ใช่นักวิจัย แสดงถึงตำแหน่งงานที่หลากหลาย
+
+MaritalStatusSingle	-0.748	ส่วนใหญ่ มีครอบครัวแล้ว ซึ่งอาจเชื่อมโยงกับความมั่นคงในชีวิต และไม่ต้องการเปลี่ยนงานบ่อย
+
+  มีรายได้และสิทธิประโยชน์สูง (รวมถึงหุ้น) มีความพึงพอใจในสิ่งแวดล้อมและเนื้องาน อยู่ในตำแหน่งที่มั่นคง และยินดีทำ OT ส่วนใหญ่ มีครอบครัวแล้ว ซึ่งอาจต้องการความมั่นคง และหลีกเลี่ยงการเปลี่ยนงาน พฤติกรรมโดยรวมสะท้อนถึงกลุ่มที่ "มั่นคงในองค์กร" ทั้งในเชิงเศรษฐกิจและจิตใจ
+
+
+### สรุป Cluster ที่ 4
+
+จำนวนพนักงานในกลุ่ม: 46 คน
+
+จำนวนที่ลาออก: 6 คน คิดเป็น 13.04%
+
+JobInvolvement	+0.577	กลุ่มนี้มีส่วนร่วมกับงานและแรงจูงใจในและอารมณ์ร่วมในการทำงานที่สูง แสดงถึงแรงจูงใจและความผูกพันที่ดีกับงานที่ทำ
+
+MonthlyRate	+0.325	รายได้รายเดือนในระดับค่อนข้างดี เป็นแรงจูงใจด้านการเงิน
+
+JobLevel	+0.253	ตำแหน่งงานระดับปานกลางถึงสูง บ่งชี้ถึงสถานภาพที่มั่นคงในองค์กร
+
+JobSatisfaction	+0.248	ความพึงพอใจในเนื้องานอยู่ในระดับดี
+
+MaritalStatusSingle	-0.046	สถานะโสดไม่มีผลชัดเจน 
+
+StockOptionLevel	-0.058	สิทธิถือหุ้นอยู่ระดับค่าเฉลี่ย
+
+DailyRate	-0.264	ค่าตอบแทนรายวันต่ำกว่าค่าเฉลี่ยเล็กน้อย
+
+JobRoleResearch.Scientist	-0.367	ส่วนใหญ่ไม่ใช่พนักงานฝ่ายวิจัย
+
+EnvironmentSatisfaction	-0.457	ความพึงพอใจต่อสิ่งแวดล้อมการทำงานต่ำกว่าค่าเฉลี่ย อาจรู้สึกไม่ชอบสถานที่ทำงานหรือสภาพแวดล้อม
+
+OverTimeYes	-0.744	กลุ่มนี้ ไม่ทำงานล่วงเวลา อย่างชัดเจน อาจให้ความสำคัญกับ Work Life balance
+
+  มีส่วนร่วมกับงานสูง มีความพึงพอใจในงาน รายได้ และตำแหน่งอยู่ในระดับที่น่าพอใจ ไม่ทำ OT อาจสะท้อนความชัดเจนด้าน Work–Life Balance หรืออาจไม่ถูกคาดหวังให้ทำ OT แม้จะมีความพึงพอใจในสิ่งแวดล้อมค่อนข้างต่ำแต่ไม่ส่งผลกระทบมากต่อการตัดสินใจลาออก กลุ่มนี้ยังมีสิทธิถือหุ้นต่ำและรายได้รายวันไม่สูง แต่แรงจูงใจจากการมีส่วนร่วมในงานช่วยชดเชยได้ดี
+
+
+# สรุปผลสุดท้าย
+
+  กลุ่มที่ 2 แสดงลักษณะเด่นคือมีอัตราการลาออกของพนักงานสูงสุด คิดเป็นร้อยละ 38.18 (จำนวน 21 คน จากทั้งหมด 55 คน) สถานการณ์ดังกล่าวสะท้อนถึงปัจจัยซับซ้อนหลายประการที่มีอิทธิพลต่อการตัดสินใจลาออกของพนักงาน โดยสามารถวิเคราะห์ปัจจัยสำคัญได้ดังนี้:
+
+  ปัจจัยหลักที่ส่งผลกระทบคือระดับการมีส่วนร่วมในงาน (JobInvolvement) ที่อยู่ในเกณฑ์ต่ำมาก (ค่าสัมประสิทธิ์ -0.758) ตามด้วยระดับความพึงพอใจในงาน (JobSatisfaction) ที่ต่ำเช่นกัน (ค่าสัมประสิทธิ์ -0.520) ข้อมูลดังกล่าวบ่งชี้ว่าพนักงานในกลุ่มนี้มีระดับแรงจูงใจต่ำมาก ขาดความรู้สึกเป็นส่วนหนึ่งของงานหรือองค์กร ซึ่งเป็นตัวบ่งชี้สำคัญของแนวโน้มการลาออก
+
+  ปัจจัยด้านผลตอบแทนถือเป็นองค์ประกอบสำคัญ โดยเฉพาะอย่างยิ่งระดับการถือครองหุ้นขององค์กร (StockOptionLevel) ที่อยู่ในระดับต่ำมาก (ค่าสัมประสิทธิ์ -0.776) ในบริบทที่การให้หุ้นเป็นส่วนหนึ่งของผลตอบแทนรวม การมีระดับการถือครองหุ้นต่ำสะท้อนให้เห็นว่าพนักงานอาจรับรู้ว่าผลตอบแทนโดยรวมที่ได้รับต่ำกว่าที่ควรจะเป็นหรือต่ำกว่าความคาดหวัง แม้ว่าอัตราค่าจ้างรายวัน (DailyRate) จะค่อนข้างสูงกว่าค่าเฉลี่ย (ค่าสัมประสิทธิ์ +0.142) แต่อัตรารายได้ต่อเดือน (MonthlyRate) กลับอยู่ในระดับค่อนข้างต่ำ (ค่าสัมประสิทธิ์ -0.192) ซึ่งอาจส่งผลต่อความรู้สึกไม่มั่นคงทางการเงินหรือการรับรู้ถึงความไม่คุ้มค่าในระยะยาว
+
+  ระดับความพึงพอใจในสภาพแวดล้อมการทำงาน (EnvironmentSatisfaction) ที่ต่ำ (ค่าสัมประสิทธิ์ -0.259) เป็นอีกปัจจัยหนึ่งที่ส่งผลกระทบในเชิงลบ พนักงานกลุ่มนี้อาจไม่พึงพอใจต่อสถานที่ตั้ง ลักษณะทางกายภาพขององค์กร สัมพันธภาพกับผู้ร่วมงาน หรือวัฒนธรรมองค์กร ซึ่งอาจส่งผลให้ความพึงพอใจในการปฏิบัติงานลดลง
+
+  พฤติกรรมการไม่ทำงานล่วงเวลา (OverTimeYes มีค่าสัมประสิทธิ์ -0.149 ซึ่งหมายถึงแนวโน้มไม่ทำงานล่วงเวลา) อาจสะท้อนถึงการขาดความทุ่มเทหรือแรงจูงใจในการปฏิบัติงานนอกเหนือขอบเขตความรับผิดชอบ ซึ่งสอดคล้องกับระดับความพึงพอใจและการมีส่วนร่วมในงานที่ต่ำ
+
+  ลักษณะเฉพาะบุคคลของพนักงานในกลุ่มนี้คือส่วนใหญ่มีสถานภาพโสด (MaritalStatusSingle มีค่าสัมประสิทธิ์สูง +0.685) ส่งผลให้มีความคล่องตัวในการตัดสินใจเปลี่ยนแปลงอาชีพ เนื่องจากอาจมีภาระผูกพันส่วนบุคคลหรือครอบครัวน้อยกว่า ดังนั้น เมื่อเผชิญกับปัจจัยเชิงลบ จึงมีแนวโน้มที่จะตัดสินใจลาออกได้ง่ายกว่ากลุ่มอื่น
+
+  เป็นที่น่าสังเกตว่าพนักงานในกลุ่มนี้มีระดับตำแหน่งงาน (JobLevel) สูงกว่าค่าเฉลี่ยเล็กน้อย (ค่าสัมประสิทธิ์ +0.154) ซึ่งอาจบ่งชี้ถึงการมีประสบการณ์หรือการดำรงตำแหน่งในบทบาทที่มีความสำคัญระดับหนึ่ง อย่างไรก็ตาม ปัจจัยเชิงบวกดังกล่าวอาจไม่สามารถลดทอนผลกระทบจากปัจจัยเชิงลบอื่นๆ ที่มีนัยสำคัญมากกว่าได้ นอกจากนี้ การที่กลุ่มนี้มีแนวโน้มที่จะไม่ได้อยู่ในตำแหน่งนักวิทยาศาสตร์การวิจัย (JobRoleResearch.Scientist มีค่าสัมประสิทธิ์ -0.282) ช่วยให้สามารถระบุได้ว่าประเด็นปัญหาเหล่านี้เกิดกับพนักงานในตำแหน่งงานประเภทอื่น
+
+  โดยสรุป พนักงานในกลุ่มที่ 2 เผชิญกับสภาวะการณ์ที่เกิดจากปัจจัยเชิงลบหลายประการร่วมกัน ได้แก่ ความไม่พึงพอใจในลักษณะงานที่ปฏิบัติ การขาดความผูกพันต่อองค์กร การรับรู้ว่าผลตอบแทนโดยรวม (โดยเฉพาะส่วนของหุ้น) ไม่สอดคล้องกับความคาดหวัง และความไม่พึงพอใจต่อสภาพแวดล้อมในการทำงาน ปัจจัยเหล่านี้ เมื่อประกอบกับสถานภาพโสดซึ่งเพิ่มความคล่องตัวในการเปลี่ยนแปลงงาน ส่งผลให้พนักงานกลุ่มนี้มีอัตราการลาออกสูงที่สุดอย่างมีนัยสำคัญลาออกสูงที่สุดอย่างมีนัยสำคัญ

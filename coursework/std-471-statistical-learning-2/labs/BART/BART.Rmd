@@ -1,0 +1,53 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-09-12"
+---
+
+```{r}
+library(BART)
+
+college=read.csv("College.csv",header=T,na.strings="?")
+rownames(college) = college[,1]
+college=data.frame(college[,-1])
+college$Private = as.factor(college$Private)
+head(college)
+dim(college)
+```
+
+### BART
+
+```{r}
+K=10
+set.seed(123)
+folds=sample(1:K,nrow(college),replace=TRUE)
+
+set.seed(123)
+yhat_cv_rmse <- 1:K
+for (i in 1:K){
+  train <- folds!=i
+  x <- college[, -18]
+  y <- college[, 18]
+  xtrain <- x[train, ]
+  ytrain <- y[train]
+  xtest <- x[-train, ]
+  ytest <- y[-train]
+
+  bartfit <- gbart(xtrain, ytrain, x.test = xtest)
+  yhat_cv_rmse[i] <- sqrt(mean((ytest - bartfit$yhat.test.mean)^2))
+}
+```
+
+```{r}
+yhat_cv_rmse
+min(yhat_cv_rmse)
+mean(yhat_cv_rmse)
+```
+
+### Random Forest ≈ 12.77
+
+### XGBosst ≈ 10.8
+
+### BART ≈ 11.03
+
+############################### 

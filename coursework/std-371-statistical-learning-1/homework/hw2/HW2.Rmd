@@ -1,0 +1,621 @@
+---
+title: "HW2"
+author: "65090502417 Piyapat Jantawee"
+output:
+  word_document: default
+  html_document: default
+date: "2025-02-21"
+---
+
+# ข้อ1 
+
+## Data : BankChurners 
+## Class Variable : Attrition Flag
+```{r}
+bank <- read.csv('BankChurners.csv')
+table(bank$Attrition_Flag)
+str(factor(bank$Attrition_Flag))
+```
+
+
+### "ยัด data ทั้งหมด(ให้ y = Attrition Flag (ปรับเป็น factor variable โดยที่ Existing = 1 Attrited = 0) x = ทุกตัวแปรที่เหลือยกเว้น CLIENTNUM) เข้า model ดูเทียบค่า P-value ตรวจสอบว่าว่าค่าใดควรอยู่ในตัวแบบ"
+
+```{r}
+library(base)
+
+bank <- bank[2:length(bank)]
+
+number <- dim(bank)[1] 
+bank$Attrition_Flag <- factor(bank$Attrition_Flag, levels = c("Attrited Customer","Existing Customer"))
+
+summary(glm(Attrition_Flag~. ,data = bank, family = 'binomial'))
+
+
+```
+
+
+### "จากการพิจารณา P-value ทำให้ตัวแปรสุทธิที่จะถูกคัดเลือกคือ 
+### y = Attrition_flag
+
+### x1 = Gender, 
+### x2 = Dependent_count
+### x3 =Income_Category
+### x4 = Total_Relationship_Count
+### x5 = Months_Inactive_12_mon
+### x6 = Contacts_Count_12_mon 
+### x7 = Total_Revolving_Bal
+### x8 = Total_Trans_Amt
+### x9 = Total_Trans_Ct
+
+
+### "ทำ Monte แบ่ง Data หาจุดตัว prob ที่ดีที่สุด และ หา Average Accuracy"
+
+```{r}
+monte_acc <- seq(20)
+each_threshold <- seq(0.1,0.9,by = 0.1)
+
+tp_each_monte <- seq(20)
+tn_each_monte <- seq(20)
+fp_each_monte <- seq(20)
+fn_each_monte <- seq(20)
+
+pre_each_monte <- seq(20)
+rec_each_monte <- seq(20)
+
+f_1_each_monte <- seq(20)
+
+for (i in 1:20){
+  for_train <- sample(number, size = (0.8 * number),replace = FALSE)
+  for (j in 1:length(each_threshold)){
+    fin_model <- glm(Attrition_Flag ~ 
+                       Gender + Dependent_count + Income_Category +
+                       Total_Relationship_Count + Months_Inactive_12_mon + Contacts_Count_12_mon + Total_Revolving_Bal + Total_Trans_Amt + Total_Trans_Ct,
+                     data = bank, subset = for_train, family = 'binomial' )
+    fin_prob <- predict(fin_model, newdata = bank[-for_train,], type = 'response')
+    
+    fin_pred <- rep("Attrited Customer",length(fin_prob))
+    fin_pred[fin_prob > (j/10)] = "Existing Customer"
+    
+    each_threshold[j] = mean(fin_pred == bank[-for_train, ]$Attrition_Flag)
+  }
+  fin_prob <- predict(fin_model, newdata = bank[-for_train,], type = 'response')
+  fin_pred <- rep("Attrited Customer",length(fin_prob))
+  fin_pred[fin_prob > (which.max(each_threshold)/10)] = "Existing Customer"
+  
+  monte_acc[i] =  mean(fin_pred == bank[-for_train, ]$Attrition_Flag)
+  
+  fin_table <- table(fin_pred, bank[-for_train, ]$Attrition_Flag)
+  tp_each_monte[i] <- fin_table[2,2]
+  tn_each_monte[i] <- fin_table[1,1]
+  fp_each_monte[i] <- fin_table[2,1]
+  fn_each_monte[i] <- fin_table[1,2]
+  
+  pre_each_monte[i] <- tp_each_monte[i]/(tp_each_monte[i]+fp_each_monte[i])
+  rec_each_monte[i] <- tp_each_monte[i]/(tp_each_monte[i]+fn_each_monte[i])
+  
+  f_1_each_monte[i] <- 2*(pre_each_monte[i] * rec_each_monte[i])/(pre_each_monte[i] + rec_each_monte[i])
+}
+
+```
+
+
+### "จากการทำ Monte 20 รอบ ที่ train st = 80% ได้ค่าเป็น"
+
+## "Best threshold"
+```{r}
+plot(each_threshold)
+cut_prob = which.max(each_threshold)/10
+cut_prob
+```
+
+## "Bank Model Accuracy"
+```{r}
+monte_acc
+```
+
+## "Bank Model True Positive"
+```{r}
+tp_each_monte
+```
+
+## "Bank Model True Negative"
+```{r}
+tn_each_monte
+```
+
+## "Bank Model False Positive"
+```{r}
+fp_each_monte
+```
+
+## "Bank Model False Negative"
+```{r}
+fn_each_monte
+```
+
+## "Bank Model Precision"
+```{r}
+pre_each_monte
+```
+
+## "Bank Model Recall"
+```{r}
+rec_each_monte
+```
+
+## "Bank Model F1 Score"
+```{r}
+f_1_each_monte
+```
+
+## "Average Bank Model Accuracy"
+```{r}
+avg_acc <- mean(monte_acc)
+avg_acc
+```
+
+## "Average Bank Model True Positive"
+```{r}
+avg_tp <- mean(tp_each_monte)
+avg_tp
+```
+
+## "Average Bank Model True Negative"
+```{r}
+avg_tn <- mean(tn_each_monte)
+avg_tn
+```
+
+## "Average Bank Model False Positive"
+```{r}
+avg_fp <- mean(fp_each_monte)
+avg_fp
+```
+
+## "Average Bank Model False Negative"
+```{r}
+avg_fn <- mean(fn_each_monte)
+avg_fn
+```
+
+## "Average Bank Model Precision"
+```{r}
+avg_precision <- mean(pre_each_monte)
+avg_precision
+```
+
+## "Average Bank Model Recall"
+```{r}
+avg_recall <- mean(rec_each_monte)
+avg_recall
+```
+
+## "Average Bank Model F1 Score"
+```{r}
+avg_f_1_score <- mean(f_1_each_monte)
+avg_f_1_score
+```
+
+## "Average Bank Model Table"
+```{r}
+avg_fin_table <- matrix(seq(4),ncol = 2)
+colnames(avg_fin_table) <- c('Attrited Customer',  'Existing Customer')
+rownames(avg_fin_table) <- c('Predict Attrited Customer',  'Predict Existing Customer')
+avg_fin_table[1,1] <- avg_tn
+avg_fin_table[2,2] <- avg_tp
+avg_fin_table[1,2] <- avg_fn
+avg_fin_table[2,1] <- avg_fp
+
+avg_fin_table
+```
+
+## "Bank Model ROC Curve"
+```{r}
+library(ROSE)
+table(fin_pred, bank$Attrition_Flag[-for_train])
+
+roc.curve(bank$Attrition_Flag[-for_train], fin_pred)
+```
+
+
+# ข้อ 2
+
+## Data : iris
+## Class Variable : Species
+```{r}
+table(iris$Species)
+
+pairs(iris)
+
+plot(iris$Sepal.Length ,iris$Species, xlab = "Sepal.Length", ylab = "Species")
+plot(iris$Sepal.Width ,iris$Species, xlab = "Sepal.Width", ylab = "Species")
+plot(iris$Petal.Length ,iris$Species, xlab = "Petal.Length", ylab = "Species")
+plot(iris$Petal.Width ,iris$Species, xlab = "Petal.Width", ylab = "Species")
+
+pairs(iris[1:4], col = iris$Species)
+
+```
+
+## ข้อ 2.1
+
+### "จากการที่ ตัวแปร Class ที่เป็น Norminal Scale (ชนิด Species)
+### จึงใช้ Multinom ในการสร้างตัวแบบ"
+### โดยที่
+### y = Species
+
+### x1 = Sepal.Length 
+### x2 = Sepal.Width
+### x3 = Petal.Length
+### x4 = Petal.Width 
+
+```{r include=FALSE}
+library(nnet)
+full_iris <- summary(multinom(Species~. ,data = iris, HESS = TRUE))
+```
+
+```{r}
+full_iris
+```
+
+
+### "Class predict probability"
+```{r include=FALSE}
+full_iris_prob <- predict(multinom(Species~. ,data = iris, HESS = TRUE), type = 'probs')
+```
+
+```{r}
+full_iris_prob
+```
+
+
+
+### "Class predict"
+```{r include=FALSE}
+full_iris_pred <- predict(multinom(Species~. ,data = iris, HESS = TRUE), type = 'class')
+```
+
+```{r}
+full_iris_pred
+```
+
+### Discriminant Line
+
+```{r include=FALSE}
+
+np <- 500
+sep_length <- seq(from = seq(from = min(iris$Sepal.Length), to = max(iris$Sepal.Length), length.out = np))
+sep_width <- seq(from = seq(from = min(iris$Sepal.Width), to = max(iris$Sepal.Width), , length.out = np))
+pet_length <- seq(from = seq(from = min(iris$Petal.Length), to = max(iris$Petal.Length), length.out = np))
+pet_width <- seq(from = seq(from = min(iris$Petal.Width), to = max(iris$Petal.Width), , length.out = np))
+
+nd_1_2 <- expand.grid(Sepal.Length = sep_length, Sepal.Width = sep_width)
+nd_1_3 <- expand.grid(Sepal.Length = sep_length, Petal.Length = pet_length)
+nd_1_4 <- expand.grid(Sepal.Length = sep_length, Petal.Width = pet_width)
+nd_2_3 <- expand.grid(Sepal.Width = sep_width, Petal.Length = pet_length)
+nd_2_4 <- expand.grid(Sepal.Width = sep_width, Petal.Width = pet_width)
+nd_3_4 <- expand.grid(Petal.Length = pet_length, Petal.Width = pet_width)
+
+
+prd_1_2 <- as.numeric(predict(multinom(Species~Sepal.Length + Sepal.Width, data = iris),newdata = nd_1_2))
+prd_1_3 <- as.numeric(predict(multinom(Species~Sepal.Length + Petal.Length, data = iris),newdata = nd_1_3))
+prd_1_4 <- as.numeric(predict(multinom(Species~Sepal.Length + Petal.Width, data = iris),newdata = nd_1_4))
+
+prd_2_3 <- as.numeric(predict(multinom(Species~Sepal.Width + Petal.Length, data = iris),newdata = nd_2_3))
+prd_2_4 <- as.numeric(predict(multinom(Species~Sepal.Width + Petal.Width, data = iris),newdata = nd_2_4))
+
+prd_3_4 <- as.numeric(predict(multinom(Species~Petal.Length + Petal.Width, data = iris),newdata = nd_3_4))
+```
+
+
+## Sepal.Length - Sepal.Width
+```{r}
+plot(iris$Sepal.Length,iris$Sepal.Width, col = iris$Species)
+contour(x  = sep_length, y = sep_width, z = matrix(prd_1_2, nrow = np , ncol = np), levels = c(1, 2,3), add = TRUE, drawlabels = FALSE)
+```
+
+## Sepal.Length - Petal.Length
+```{r}
+plot(iris$Sepal.Length,iris$Petal.Length, col = iris$Species)
+contour(x  = sep_length, y = pet_length, z = matrix(prd_1_3, nrow = np , ncol = np), levels = c(1, 2,3), add = TRUE, drawlabels = FALSE)
+```
+
+## Sepal.Length - Petal.Width
+```{r}
+plot(iris$Sepal.Length,iris$Petal.Width, col = iris$Species)
+contour(x  = sep_length, y = pet_width, z = matrix(prd_1_4, nrow = np , ncol = np), levels = c(1, 2,3), add = TRUE, drawlabels = FALSE)
+```
+
+## Sepal.Width - Petal.Length
+```{r}
+plot(iris$Sepal.Width,iris$Petal.Length, col = iris$Species)
+contour(x  = sep_width, y = pet_length, z = matrix(prd_2_3, nrow = np , ncol = np), levels = c(1, 2,3), add = TRUE, drawlabels = FALSE)
+```
+## Sepal.Width - Petal.Width
+```{r}
+plot(iris$Sepal.Width,iris$Petal.Width, col = iris$Species)
+contour(x  = sep_width, y = pet_width, z = matrix(prd_2_4, nrow = np , ncol = np), levels = c(1, 2,3), add = TRUE, drawlabels = FALSE)
+```
+## Petal.Length - Petal.Width
+```{r}
+plot(iris$Petal.Length,iris$Petal.Width, col = iris$Species)
+contour(x  = pet_length, y = pet_width, z = matrix(prd_3_4, nrow = np , ncol = np), levels = c(1, 2,3), add = TRUE, drawlabels = FALSE)
+```
+
+
+### "Predict Table"
+```{r include=FALSE}
+full_iris_table <- table(predict(multinom(Species~. ,data = iris, HESS = TRUE), type = 'class'), iris$Species)
+```
+
+```{r}
+full_iris_table
+```
+
+### "Accuracy"
+```{r include=FALSE}
+full_iris_acc <- mean(predict(multinom(Species~. ,data = iris, HESS = TRUE), type = 'class') == iris$Species)
+```
+
+```{r}
+full_iris_acc
+```
+
+
+## ข้อ 2.2
+### "Monte Carlo 20 รอบ ด้วย train_data = 80%"
+```{r include=FALSE}
+
+n <- dim(iris)[1]
+
+model.acc = seq(20)
+
+model.pre.c1 = seq(20)
+model.pre.c2 = seq(20)
+model.pre.c3 = seq(20)
+
+model.rec.c1 = seq(20)
+model.rec.c2 = seq(20)
+model.rec.c3 = seq(20)
+
+for (i in 1:length(model.acc)){
+  iris_train_index <- sample(n, size = (0.8*n))
+  model_iris <- multinom(Species~. ,data = iris, subset = iris_train_index, HESS = TRUE)
+  
+  iris_probs <- predict(model_iris, newdata = iris[-iris_train_index, ], type = 'probs')
+  iris_pred <- predict(model_iris, newdata = iris[-iris_train_index, ], type = 'class')
+  
+  iris_table <- table(iris_pred,iris$Species[-iris_train_index])
+  
+  iris_acc <- mean(iris$Species[-iris_train_index] == iris_pred)
+  
+  model.acc[i] = iris_acc
+  model.pre.c1[i] = iris_table[1,1]/(iris_table[1,1]+iris_table[1,2]+iris_table[1,3])
+  model.pre.c2[i] = iris_table[2,2]/(iris_table[2,1]+iris_table[2,2]+iris_table[2,3])
+  model.pre.c3[i] = iris_table[3,3]/(iris_table[3,1]+iris_table[3,2]+iris_table[3,3])
+  
+  model.rec.c1[i] = iris_table[1,1]/(iris_table[1,1]+iris_table[2,1]+iris_table[3,1])
+  model.rec.c2[i] = iris_table[2,2]/(iris_table[1,2]+iris_table[2,2]+iris_table[3,2])
+  model.rec.c3[i] = iris_table[3,3]/(iris_table[1,3]+iris_table[2,3]+iris_table[3,3])
+}
+```
+
+### "iris Multinom Accuracy"
+```{r}
+model.acc
+```
+### "Average iris Multinom Accuracy"
+```{r}
+mean(model.acc)
+```
+
+### "iris Multinom Precision"
+#### Class 1 (Setosa)
+```{r}
+model.pre.c1
+```
+#### Class 2 (Versicolor)
+```{r}
+model.pre.c2
+```
+#### Class 3 (Virginica)
+```{r}
+model.pre.c3
+```
+
+### "Average iris Multinom Precision"
+#### Average Class 1 (Setosa)
+```{r}
+mean(model.pre.c1)
+```
+#### Average Class 2 (Versicolor)
+```{r}
+mean(model.pre.c2)
+```
+#### Average Class 3 (Virginica)
+```{r}
+mean(model.pre.c3)
+```
+
+
+### "iris Multinom Recall"
+#### Class 1 (Setosa)
+```{r}
+model.rec.c1
+```
+#### Class 2 (Versicolor)
+```{r}
+model.rec.c2
+```
+#### Class 3 (Virginica)
+```{r}
+model.rec.c3
+```
+
+### "Average iris Multinom Recall"
+#### Average Class 1 (Setosa)
+```{r}
+mean(model.rec.c1)
+```
+#### Average Class 2 (Versicolor)
+```{r}
+mean(model.rec.c2)
+```
+#### Average Class 3 (Virginica)
+```{r}
+mean(model.rec.c3)
+```
+
+# ข้อ 2.3
+### "ทำ Monte 20 รอบ แล้ว หา Average Accuracy ของแต่ละระดับค่า K"
+```{r include=FALSE}
+library(class)
+library(KODAMA)
+
+iris_knn_acc = matrix(seq(1:100), ncol = 2)
+colnames(iris_knn_acc) <- c("K", "Avg Accuracy")
+iris_knn_monte = seq(20)
+
+plot(iris[, 1:4], col = iris$Species )
+
+for (i in 1:length(iris_knn_acc[ ,2])){
+  iris_knn_acc[i, 1] = i
+  for (j in 1:length(iris_knn_monte)){
+    iris_train_index <- sample(n, size = (0.8*n))
+    
+    iris_knn <- knn(iris[iris_train_index, -ncol(iris)], iris[-iris_train_index,-ncol(iris)], 
+                  cl = iris[iris_train_index, ]$Species,k = i)
+  
+    iris_knn_monte[j] <- mean(iris[-iris_train_index, ]$Species == iris_knn)
+    iris_knn_acc[i,2] <- mean(iris_knn_monte)
+ }
+}
+```
+
+### "Average Accuracy แต่ละระดับค่า K"
+```{r}
+iris_knn_acc
+plot(iris_knn_acc)
+```
+
+### "ค่า K ที่ Average Accuracy มากที่สุด"
+```{r}
+best_k <- which.max(iris_knn_acc[ ,2])
+best_k
+```
+
+## "ทำ KNN คู่ กับ Monte train data 80%
+## ด้วยค่า K ที่ทำให้ได้ Average Accuracy มากที่สุด" 
+
+```{r include=FALSE}
+n <- dim(iris)[1]
+
+knn.model.acc = seq(20)
+
+knn.model.pre.c1 = seq(20)
+knn.model.pre.c2 = seq(20)
+knn.model.pre.c3 = seq(20)
+
+knn.model.rec.c1 = seq(20)
+knn.model.rec.c2 = seq(20)
+knn.model.rec.c3 = seq(20)
+
+for (i in 1:length(knn.model.acc)){
+  iris_train_index <- sample(n, size = (0.8*n))
+  knn_model <- knn(iris[iris_train_index, -ncol(iris)], iris[-iris_train_index,-ncol(iris)], 
+                  cl = iris[iris_train_index, ]$Species,k = best_k)
+  
+  
+  knn_model_table <- table(knn_model,iris$Species[-iris_train_index])
+  
+  knn_model_acc <- mean(iris$Species[-iris_train_index] == knn_model)
+  
+  knn.model.acc[i] = knn_model_acc
+  knn.model.pre.c1[i] = knn_model_table[1,1]/(knn_model_table[1,1]+knn_model_table[1,2]+knn_model_table[1,3])
+  knn.model.pre.c2[i] = knn_model_table[2,2]/(knn_model_table[2,1]+knn_model_table[2,2]+knn_model_table[2,3])
+  knn.model.pre.c3[i] = knn_model_table[3,3]/(knn_model_table[3,1]+knn_model_table[3,2]+knn_model_table[3,3])
+  
+  knn.model.rec.c1[i] = knn_model_table[1,1]/(knn_model_table[1,1]+knn_model_table[2,1]+knn_model_table[3,1])
+  knn.model.rec.c2[i] = knn_model_table[2,2]/(knn_model_table[1,2]+knn_model_table[2,2]+knn_model_table[3,2])
+  knn.model.rec.c3[i] = knn_model_table[3,3]/(knn_model_table[1,3]+knn_model_table[2,3]+knn_model_table[3,3])
+}
+```
+
+### "KNN iris Accuracy"
+```{r}
+knn.model.acc
+```
+### "Average KNN iris Accuracy"
+```{r}
+mean(knn.model.acc)
+```
+
+### "KNN iris Precision"
+#### Class 1 (Setosa)
+```{r}
+knn.model.pre.c1
+```
+#### Class 2 (Versicolor)
+```{r}
+knn.model.pre.c2
+```
+#### Class 3 (Virginica)
+```{r}
+knn.model.pre.c3
+```
+
+### "Average KNN iris Precision"
+#### Average Class 1 (Setosa)
+```{r}
+mean(knn.model.pre.c1)
+```
+#### Average KNN Class 2 (Versicolor)
+```{r}
+mean(knn.model.pre.c2)
+```
+#### Average KNN Class 3 (Virginica)
+```{r}
+mean(knn.model.pre.c3)
+```
+
+
+### "KNN iris Recall"
+#### Class 1 (Setosa)
+```{r}
+knn.model.rec.c1
+```
+#### Class 2 (Versicolor)
+```{r}
+knn.model.rec.c2
+```
+#### Class 3 (Virginica)
+```{r}
+knn.model.rec.c3
+```
+
+### "Average KNN iris Recall"
+#### Average Class 1 (Setosa)
+```{r}
+mean(knn.model.rec.c1)
+```
+#### Average Class 2 (Versicolor)
+```{r}
+mean(knn.model.rec.c2)
+```
+#### Average Class 3 (Virginica)
+```{r}
+mean(knn.model.rec.c3)
+```
+
+## Compare KNN กับ Multinom
+#### ตาราง Average
+```{r}
+avg_compare_table <- matrix(seq(14), ncol = 2)
+colnames(avg_compare_table) <- c("Multinom", "KNN")
+rownames(avg_compare_table) <- c("Accuracy", "Precision Class 1 (Setosa)", "Precision Class 2 (Versicolor)", "Precision Class 3 (Virginica)", "Recall Class 1 (Setosa)", "Recall Class 2 (Versicolor)", "Recall Class 3 (Virginica)" )
+
+avg_compare_table[, 1] = c(mean(model.acc),mean(model.pre.c1),mean(model.pre.c2),mean(model.pre.c3),mean(model.rec.c1),mean(model.rec.c2),mean(model.rec.c3))
+
+avg_compare_table[, 2] = c(mean(knn.model.acc),mean(knn.model.pre.c1),mean(knn.model.pre.c2),mean(knn.model.pre.c3),mean(knn.model.rec.c1),mean(knn.model.rec.c2),mean(knn.model.rec.c3))
+
+avg_compare_table
+```

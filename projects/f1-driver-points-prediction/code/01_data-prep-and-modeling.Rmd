@@ -1,0 +1,566 @@
+---
+title: "Final Project"
+author: "2414, 2417, 2421"
+date: "2026-03-26"
+output: html_document
+---
+
+```{r}
+# setwd() removed — knit with the project root as working directory
+```
+
+```{r}
+
+library(dplyr)
+library(lubridate)
+
+pit_stops <- read.csv("data/ergast/pit_stops.csv")
+qualifying <- read.csv("data/ergast/qualifying.csv")
+races <- read.csv("data/ergast/races.csv")
+results <- read.csv("data/ergast/results.csv")
+seasons <- read.csv("data/ergast/seasons.csv")
+sprint_results <- read.csv("data/ergast/sprint_results.csv")
+status <- read.csv("data/ergast/status.csv")
+circuits <- read.csv("data/ergast/circuits.csv")
+constructor_results <- read.csv("data/ergast/constructor_results.csv")
+constructor_standings <- read.csv("data/ergast/constructor_standings.csv")
+constructors <- read.csv("data/ergast/constructors.csv")
+driver_standings <- read.csv("data/ergast/driver_standings.csv")
+drivers <- read.csv("data/ergast/drivers.csv")
+lap_times <- read.csv("data/ergast/lap_times.csv")
+
+##สภาพอากาศ ล่าสุด
+weather <- read.csv("data/weather_circuit.csv")  # NOTE: assemble from data/weather/ (see README)
+
+f1_dat <- left_join(left_join(left_join(results, races, "raceId"), drivers, "driverId") |>
+                      select(resultId, constructorId, position, positionOrder, grid, points,
+                             raceId, year, round, circuitId, name, date, `time.y`, statusId,
+                             driverId, driverRef, dob, nationality), circuits, "circuitId")
+
+f1_dat <- left_join(f1_dat, constructors, "constructorId")
+
+f1_dat <- f1_dat |> filter(year >= 2010)
+
+### "Car #2 (Logan Sargeant, Williams) withdrawn." 
+### william ถอนนักขับออกก่อนแข่ง ทำให้ 2024 round 3 คนหายไป 1 ผลทั้งหมดเหลือ 2559 (2560 - 1)
+
+f1_dat2 <- f1_dat %>%
+  
+  arrange(year, round, positionOrder) %>%
+  
+  mutate(
+    date        = as.Date(date),
+    dob         = as.Date(dob),
+    Constructor = name,
+    Age         = as.numeric(floor(time_length(interval(dob, date), "years"))),
+    Nationality = nationality.x
+  ) %>%
+  
+  # 4) Driver Experience (ไม่เปลี่ยน)
+  group_by(driverId) %>%
+  arrange(year, round, .by_group = TRUE) %>%
+  mutate(
+    Driver_Experience = row_number() - 1,
+    Driver_Podium     = lag(cumsum(positionOrder %in% 1:3), default = 0),
+    Prev_Total_Points = lag(cumsum(points), default = 0)
+  ) %>%
+  ungroup() %>%
+  
+  # 6) Driver + Constructor Experience (ไม่เปลี่ยน)
+  group_by(driverId, constructorId) %>%
+  arrange(year, round, .by_group = TRUE) %>%
+  mutate(
+    Driver_Constructor_Exp = row_number() - 1
+  ) %>%
+  ungroup()
+
+# 5) Constructor Wins — แยก pipe ออกมาทำหลัง ==================
+constructor_wins_tbl <- f1_dat2 %>%
+  group_by(constructorId, raceId, year, round) %>%
+  summarise(
+    team_podium_this_race = sum(positionOrder %in% 1:3),
+    .groups = "drop"
+  ) %>%
+  group_by(constructorId) %>%
+  arrange(year, round, .by_group = TRUE) %>%
+  mutate(
+    Constructor_Wins = lag(cumsum(team_podium_this_race), default = 0)
+  ) %>%
+  ungroup() %>%
+  select(constructorId, raceId, Constructor_Wins)
+
+f1_dat2 <- f1_dat2 %>%
+  left_join(constructor_wins_tbl, by = c("constructorId", "raceId"))
+
+
+# หาแถวที่เป็น header รอบสอง
+split_row <- which(weather$location_id == "location_id")
+
+# แยกตาราง
+location_table <- weather[1:(split_row - 1),
+                          c("location_id", "latitude", "longitude",
+                            "elevation", "utc_offset_seconds", "timezone")]
+location_table$circuitId <- circuits$circuitId
+
+weather_table <- weather[(split_row + 1):nrow(weather), ]
+
+# ตั้งชื่อคอลัมน์จาก header แถวที่ซ้ำ
+colnames(weather_table) <- weather[split_row, ]
+
+# ลบแถว header ออก (ถ้ายังติดมาด้วย)
+weather_table <- weather_table[-1, ]
+
+# แปลงชนิดข้อมูล
+weather_table$location_id <- as.numeric(weather_table$location_id)
+weather_table$temperature <- as.numeric(weather_table$`temperature_2m (°C)`)
+weather_table$rain <- as.numeric(weather_table$`rain (mm)`)
+weather_table$wind_speed <- as.numeric(weather_table$`wind_speed_10m (km/h)`)
+weather_table$weather_time <- as.POSIXct(weather_table$time, format = "%Y-%m-%dT%H:%M")
+
+# ดูผลลัพธ์
+head(location_table)
+head(weather_table)
+
+weather_table <- weather_table[, colnames(weather_table) != ""]
+weather_circuit <- weather_table %>%
+  left_join(mutate(location_table,
+                   location_id = as.numeric(location_id)),
+            by = "location_id")
+
+weather_circuit  <-  left_join(weather_circuit, circuits, "circuitId") |> 
+  select(location_id, 
+         circuitId,
+         circuitRef,
+         weather_time,
+         temperature,
+         rain,
+         wind_speed,
+         latitude,
+         longitude,
+         lat,
+         lng)
+
+str(f1_dat2)
+str(weather_circuit)
+
+
+total_race_time <- lap_times %>%
+  group_by(raceId) %>%
+  mutate(race_laps = max(lap)) %>%          # จำนวนรอบของ race
+  group_by(raceId, driverId) %>%
+  summarise(
+    total_ms = sum(milliseconds, na.rm = TRUE),
+    laps_completed = max(lap),
+    race_laps = max(race_laps),
+    .groups = "drop"
+  ) %>%
+  filter(laps_completed == race_laps) %>%   # เอาเฉพาะคนที่วิ่งครบ
+  group_by(raceId) %>%
+  summarise(
+    race_time_ms = max(total_ms),           
+    .groups = "drop"
+  ) %>%
+  mutate(
+    hours = race_time_ms %/% (1000 * 60 * 60),
+    minutes = (race_time_ms %% (1000 * 60 * 60)) %/% (1000 * 60),
+    seconds = (race_time_ms %% (1000 * 60)) / 1000,
+    time_hms = sprintf("%02d:%02d:%06.3f", hours, minutes, seconds)
+  )
+
+## ตัวแปร dnf
+f1_dat2 <- left_join(f1_dat2, status, by = "statusId")
+
+
+f1_dat2 <- left_join(f1_dat2, total_race_time, by = "raceId")
+
+# 1️⃣ สร้างเวลาเริ่มและเวลาจบการแข่งขัน
+f1_dat2_time <- f1_dat2 %>%
+  mutate(
+    race_start = ymd(date) + hms(time.y),
+    race_end   = race_start + milliseconds(race_time_ms)
+  )
+
+# 2️⃣ แปลง weather_time ให้เป็น datetime
+weather_circuit2 <- weather_circuit %>%
+  mutate(weather_time = ymd_hms(weather_time))
+
+# 3️⃣ Join แล้วกรองช่วงเวลาแข่งขัน
+weather_avg <- f1_dat2_time %>%
+  select(raceId, circuitId, race_start, race_end) %>%
+  distinct() %>%   # เอา race ซ้ำออกก่อน
+  left_join(weather_circuit2,
+            by = "circuitId",
+            relationship = "many-to-many") %>%
+  filter(weather_time >= race_start,
+         weather_time <= race_end) %>%
+  group_by(raceId) %>%
+  summarise(
+    avg_temperature = mean(temperature, na.rm = TRUE),
+    avg_rain        = mean(rain, na.rm = TRUE),
+    avg_wind_speed  = mean(wind_speed, na.rm = TRUE)
+  )
+
+# 4️⃣ Join กลับเข้า dataset หลัก
+f1_dat2 <- f1_dat2 %>%
+  left_join(weather_avg, by = "raceId")
+
+str(f1_dat2)
+
+
+f1_dat2 <- f1_dat2 %>%
+  mutate(
+    is_finished = status == "Finished" |
+      grepl("^\\+\\d+ Lap", status),
+    DNF_flag = ifelse(is_finished, 0, 1)
+  )
+
+constructor_race <- f1_dat2 %>%
+  group_by(constructorId, raceId, year, round) %>%
+  summarise(
+    team_DNF = ifelse(any(DNF_flag == 1), 1, 0),
+    .groups = "drop"
+  ) %>%
+  arrange(year, round)
+
+constructor_race <- constructor_race %>%
+  group_by(constructorId) %>%
+  arrange(year, round, .by_group = TRUE) %>%
+  mutate(
+    total_races_before = row_number() - 1,
+    cum_DNF_before = lag(cumsum(team_DNF), default = 0),
+    Constructor_DNF_Score = ifelse(
+      total_races_before == 0,
+      0,
+      cum_DNF_before / total_races_before
+    )
+  ) %>%
+  ungroup()
+
+
+f1_dat2 <- f1_dat2 %>%
+  left_join(
+    constructor_race %>%
+      select(constructorId, raceId, Constructor_DNF_Score),
+    by = c("constructorId", "raceId")
+  )
+
+
+str(lap_times)
+str(circuits)
+
+dat <- read.csv("data/F1_pirelli.csv")
+str(dat)
+
+overtake_data <- lap_times %>%
+  arrange(raceId, driverId, lap) %>%
+  group_by(raceId, driverId) %>%
+  mutate(
+    pos_gain = lag(position) - position,
+    pos_gain = ifelse(pos_gain > 0, pos_gain, 0)
+  ) %>%
+  ungroup() %>%
+  group_by(raceId) %>%
+  summarise(
+    Total_Overtakes = sum(pos_gain, na.rm = TRUE),
+    Total_Laps = max(lap),
+    Overtake_Rate = Total_Overtakes / Total_Laps,
+    .groups = "drop"
+  )
+
+overtake_circuits <- left_join(f1_dat2 ,overtake_data ,by = "raceId") |>
+  select(raceId,
+         Total_Overtakes,
+         Total_Laps,
+         Overtake_Rate,
+         circuitId,
+         `name.x`,
+         circuitRef,
+         location,
+         year,
+         round)
+
+overtake_for_cluster <- overtake_circuits |> 
+                          filter(year >= 2019) |> 
+                          select(year, 
+                                 round, 
+                                 circuitId, 
+                                 Total_Overtakes,
+                                 Total_Laps,
+                                 Overtake_Rate) |> 
+                          unique()
+
+race_dnf <- f1_dat2 %>%
+  group_by(raceId, year, round) %>%
+  summarise(
+    total_starters = n(),
+    total_DNF = sum(DNF_flag),
+    Race_DNF_Rate = total_DNF / total_starters,
+    .groups = "drop"
+  )
+
+race_dnf <- race_dnf |> filter(year >= 2019)
+
+
+
+f1_pirelli <- read.csv("data/F1_pirelli_with_turns.csv")
+x <- f1_dat2 |> filter(year >= 2019) |> select(circuitId, circuitRef,round, year) |> unique()
+
+f1_pirelli <- left_join(f1_pirelli, x, by = c("year", "round"))
+f1_pirelli
+
+
+clus_dat <- left_join(left_join(f1_pirelli,
+                                race_dnf,
+                                by = c("year", "round")), 
+                      overtake_for_cluster, 
+                      by = c("year", 
+                             "round", 
+                             "circuitId")) |>
+              select(number.of.turns,
+                     circuit_length,
+                     race_distance,
+                     number_of_laps,
+                     
+                     tyre_stress,
+                     lateral,
+                     downforce,
+                     asphalt_grip,
+                     asphalt_abration,
+                     
+                     Overtake_Rate,
+                     Race_DNF_Rate)
+
+# ตัด imola ที่ไม่ได้แข่ง จาก 129 เหลือ 128 (21 + 17 + 22 + 22 + 24)
+clus_dat <- na.omit(clus_dat)
+str(clus_dat)
+
+#-------------------------------------------
+library(psych)
+library(cluster)
+library(UniversalCVI)
+KMO(cor(clus_dat))
+
+pca_dat <- prcomp(unique(scale(clus_dat)))
+cumsum(pca_dat$sdev^2/sum(pca_dat$sdev^2))
+pca_dat$x[,1:5]
+pca_dat$rotation[,1:5]
+plot(pca_dat$x[,1:5], pch = 19)
+
+
+my_colors <- colorRampPalette(c("navy", "white", "firebrick3"))(50)
+heatmap(pca_dat$rotation[, 1:5], col = my_colors, main = "PCA Loadings (1–5)")
+
+
+gower_dist <- daisy(pca_dat$x[,1:5], metric = "gower")
+hc_com <- hclust(gower_dist ,method = "complete")
+plot(hc_com)
+
+plot_idx(Hvalid(clus_dat, 
+       kmin = 2,
+       kmax = 10,
+       corr = "kendall", 
+       method = "hclust_complete"))
+
+clus_dat$cluster <- cutree(hc_com, 3)
+plot(pca_dat$x[,1:5], col = clus_dat$cluster, pch = 19)
+
+cluster_means <- aggregate(pca_dat$x[, 1:5], by = list(cluster = clus_dat$cluster), FUN = mean)
+cluster_means
+heatmap(as.matrix(t(cluster_means[,-1])), col = my_colors)
+
+
+final_clus <- clus_dat
+final_clus$circuitId <- f1_pirelli[-88,]$circuitId
+final_clus$circuitRef <- f1_pirelli[-88,]$circuitRef
+final_clus$round <- f1_pirelli[-88,]$round
+final_clus$year <- f1_pirelli[-88,]$year
+
+f1_dat2 <- left_join(f1_dat2 ,
+                     final_clus, 
+                     by = c("circuitId", "round", "year"))
+
+#-------------------------------------------
+clus_dat2 <- clus_dat |> select(tyre_stress,
+                                 lateral,
+                                 downforce,
+                                 asphalt_grip,
+                                 asphalt_abration,
+                                
+                                number.of.turns,
+                                circuit_length,
+                                race_distance,
+                                number_of_laps) |> distinct()
+
+KMO(cor(clus_dat2))
+pca_dat2 <- prcomp(unique(scale(clus_dat2)))
+cumsum(pca_dat2$sdev^2/sum(pca_dat2$sdev^2))
+pca_dat2$x[,1:2]
+pca_dat2$rotation[,1:2]
+plot(pca_dat2$x[,1:2], pch = 19)
+
+
+my_colors <- colorRampPalette(c("navy", "white", "firebrick3"))(50)
+heatmap(pca_dat2$rotation[, 1:2], col = my_colors, main = "PCA Loadings (1–2)")
+
+
+gower_dist2 <- daisy(pca_dat2$x[,1:2], metric = "gower")
+hc_com2 <- hclust(gower_dist2 ,method = "complete")
+plot(hc_com2)
+
+
+#-----------------------------
+
+
+
+
+
+#----------------------------------------------------
+f1_dat2$score_group <- ifelse(f1_dat2$positionOrder %in% c(1:3),
+                              "podium",
+                              f1_dat2$positionOrder)
+f1_dat2$score_group <- ifelse(f1_dat2$score_group %in% c(4:10),
+                              "scoring",
+                              f1_dat2$score_group)
+f1_dat2$score_group <- ifelse(f1_dat2$score_group %in% c(11:20),
+                              "no_point",
+                              f1_dat2$score_group)
+
+
+
+final_table_without_cluster <- f1_dat2 |> filter(year >= 2019) |>
+                                select(score_group,
+                                    
+                                    constructorRef,
+                                    Age,
+                                    Nationality,
+                                    
+                                    Driver_Podium,
+                                    Constructor_Wins,
+                                    Driver_Experience,
+                                    Driver_Constructor_Exp,
+                                    Prev_Total_Points,
+                                    
+                                    grid,
+                                    Constructor_DNF_Score,
+                                    
+                                    avg_temperature,
+                                    avg_rain,
+                                    avg_wind_speed,
+                                    round
+                                    )
+
+
+
+final_table_with_cluster <- f1_dat2 |> filter(year >= 2019) |>
+                              select(score_group,
+                                     
+                                     constructorRef,
+                                     Age,
+                                     Nationality,
+                                     
+                                     Driver_Podium,
+                                     Constructor_Wins,
+                                     Driver_Experience,
+                                     Driver_Constructor_Exp,
+                                     Prev_Total_Points,
+                                     
+                                     cluster,
+                                     
+                                     grid,
+                                     Constructor_DNF_Score,
+                                     
+                                     avg_temperature,
+                                     avg_rain,
+                                     avg_wind_speed,
+                                     round,
+                                     year
+                              )
+
+#write.csv(final_table_without_cluster, "final_table_without_cluster.csv")
+#write.csv(final_table_with_cluster, "final_table_with_cluster.csv")
+
+str(final_table_with_cluster)
+dim(final_table_with_cluster)
+str(f1_dat2)
+dim(f1_dat2)
+```
+
+```{r}
+library(randomForest)
+
+final_table_with_cluster$score_group <- as.factor(final_table_with_cluster$score_group)
+
+
+train_df <- final_table_with_cluster |> 
+  filter(year < 2024, round %in% c(1:20)) |>
+  select(-year,-grid)
+  
+test_df <- final_table_with_cluster |> 
+  filter(year == 2024, round %in% c(3)) |>
+  select(-year,-grid)
+
+
+rf_model <- randomForest(score_group ~ ., 
+                         data = train_df,
+                         ntree = 1000,
+                         mtry = 5)
+
+rf_prob <- predict(rf_model, newdata = test_df, type = "prob")
+
+
+rf_prob
+```
+
+```{r}
+library(dplyr)
+
+# รวม predictions กับ probability
+rf_pred_df <- test_df %>%
+  mutate(pred_no_point = rf_prob[, "no_point"],
+         pred_podium   = rf_prob[, "podium"],
+         pred_scoring  = rf_prob[, "scoring"])
+
+# กำหนดจำนวนสูงสุดตามที่ต้องการ
+max_no_point <- 10    # class 1
+max_podium   <- 3    # class 2
+max_scoring  <- 7   # class 3
+
+# สร้าง vector สำหรับ final prediction
+final_pred <- rep(NA, nrow(rf_pred_df))
+
+# 1️⃣ เลือก podium ก่อน
+podium_idx <- order(rf_pred_df$pred_podium, decreasing = TRUE)
+final_pred[podium_idx[1:max_podium]] <- "podium"
+
+# 2️⃣ เลือก scoring (ไม่ทับ podium)
+scoring_idx <- order(rf_pred_df$pred_scoring, decreasing = TRUE)
+scoring_idx <- setdiff(scoring_idx, podium_idx[1:max_podium])
+final_pred[scoring_idx[1:max_scoring]] <- "scoring"
+
+# 3️⃣ สุดท้ายเลือก no_point (ไม่ทับทั้งสอง)
+no_point_idx <- order(rf_pred_df$pred_no_point, decreasing = TRUE)
+no_point_idx <- setdiff(no_point_idx, c(podium_idx[1:max_podium],
+                                        scoring_idx[1:max_scoring]))
+final_pred[no_point_idx[1:max_no_point]] <- "no_point"
+
+# เพิ่ม column final_class
+rf_pred_df$final_class <- final_pred
+
+# ดู confusion table
+table(rf_pred_df$final_class, rf_pred_df$score_group)
+
+```
+
+```{r}
+varImpPlot(rf_model)
+```
+
+```{r}
+View(rf_pred_df |> 
+       select(score_group, 
+              constructorRef, 
+              final_class,
+              pred_no_point,
+              pred_scoring,
+              pred_podium))
+```
