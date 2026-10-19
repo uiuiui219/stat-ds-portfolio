@@ -25,7 +25,7 @@ Homework, lab reports and assignments — grouped by course. Full index in [`cou
 
 | Folder | Course | Contents |
 |---|---|---|
-| [`std-371-statistical-learning-1`](coursework/std-371-statistical-learning-1/) | Statistical Learning for Data Science I | HW2–HW6 + 11 labs (regression, GLM, trees, clustering, association rules) with Rmd/HTML/PDF |
+| [`std-371-statistical-learning-1`](coursework/std-371-statistical-learning-1/) | Statistical Learning for Data Science I | HW2–HW6 + 9 lab scripts (LAB 3–11): GLM & SMOTE, KNN, glmnet, trees, random forest, clustering, association rules — each with Rmd/HTML/PDF |
 | [`std-471-statistical-learning-2`](coursework/std-471-statistical-learning-2/) | Statistical Learning for Data Science II | HW1–HW3, clustering homework + labs: cross-validation, GLM, SVM, BART, LSTM, neural networks, clustering |
 | [`std-334-multivariate`](coursework/std-334-multivariate/) | Multivariate Analysis | PCA, factor analysis, cluster analysis, discriminant analysis (R scripts + data) |
 | [`std-335-forecasting`](coursework/std-335-forecasting/) | Forecasting | Exponential smoothing, ACF/PACF, decomposition, stationarity tests (R) |
