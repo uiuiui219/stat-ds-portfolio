@@ -556,11 +556,14 @@ varImpPlot(rf_model)
 ```
 
 ```{r}
-View(rf_pred_df |> 
-       select(score_group, 
-              constructorRef, 
-              final_class,
-              pred_no_point,
-              pred_scoring,
-              pred_podium))
+# View() needs an interactive session (fails when knitted headless, e.g. in CI)
+if (interactive()) {
+  View(rf_pred_df |> 
+         select(score_group, 
+                constructorRef, 
+                final_class,
+                pred_no_point,
+                pred_scoring,
+                pred_podium))
+}
 ```
