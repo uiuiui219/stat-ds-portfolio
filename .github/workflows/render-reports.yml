@@ -1,0 +1,198 @@
+name: Render reports
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  f1:
+    name: Render F1 (graduate project)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rmarkdown
+            any::knitr
+            any::dplyr
+            any::lubridate
+            any::psych
+            any::UniversalCVI
+            any::randomForest
+
+      - name: Unzip Ergast data
+        run: unzip -q projects/f1-driver-points-prediction/data/ergast-f1-data.zip -d projects/f1-driver-points-prediction/data/ergast
+
+      - name: Render F1 report
+        run: |
+          Rscript -e 'rmarkdown::render(
+            "projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd",
+            knit_root_dir = normalizePath("projects/f1-driver-points-prediction"),
+            output_dir    = normalizePath("docs/reports"),
+            output_file   = "f1-data-prep-and-modeling.html")'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-f1
+          path: docs/reports/f1-data-prep-and-modeling.html
+          if-no-files-found: error
+
+  ibm:
+    name: Render IBM attrition
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rmarkdown
+            any::knitr
+            any::dplyr
+            any::ggplot2
+            any::ggpubr
+            any::imager
+            any::mvtnorm
+            any::e1071
+            any::mclust
+            any::UniversalCVI
+            any::BayesCVI
+            any::corrplot
+            any::psych
+            any::glmnet
+            any::factoextra
+            any::caret
+            any::randomForest
+            any::xgboost
+            any::performanceEstimation
+            any::smotefamily
+            any::MASS
+            any::Ckmeans.1d.dp
+
+      - name: Render IBM report
+        run: |
+          Rscript -e 'rmarkdown::render(
+            "projects/ibm-attrition-prediction/code/01_full-report.Rmd",
+            knit_root_dir = normalizePath("projects/ibm-attrition-prediction"),
+            output_dir    = normalizePath("docs/reports"),
+            output_file   = "ibm-full-report.html")'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-ibm
+          path: docs/reports/ibm-full-report.html
+          if-no-files-found: error
+
+  texas_data:
+    name: Check Texas dataset
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f projects/texas-accident-severity/data/texas_accident.parquet ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=no" >> "$GITHUB_OUTPUT"
+            echo "data/texas_accident.parquet is not committed (see project README for the download link) — skipping the Texas render."
+          fi
+
+  texas:
+    name: Render Texas (if dataset present)
+    needs: texas_data
+    if: needs.texas_data.outputs.present == 'yes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rmarkdown
+            any::knitr
+            any::dplyr
+            any::arrow
+            any::ggplot2
+            any::lubridate
+            any::mgcv
+            any::mclust
+            any::randomForest
+            any::xgboost
+            any::BART
+            any::pROC
+            any::UniversalCVI
+            any::pheatmap
+            any::SHAPforxgboost
+
+      - name: Render Texas report
+        run: |
+          Rscript -e 'rmarkdown::render(
+            "projects/texas-accident-severity/code/01_full-report.Rmd",
+            knit_root_dir = normalizePath("projects/texas-accident-severity"),
+            output_dir    = normalizePath("docs/reports"),
+            output_file   = "texas-full-report.html")'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-texas
+          path: docs/reports/texas-full-report.html
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy site + reports to Pages
+    needs: [f1, ibm, texas_data, texas]
+    if: ${{ !cancelled() && needs.f1.result == 'success' && needs.ibm.result == 'success' && (needs.texas.result == 'success' || needs.texas.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: report-*
+          merge-multiple: true
+          path: docs/reports
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

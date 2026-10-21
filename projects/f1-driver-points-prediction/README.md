@@ -25,10 +25,10 @@ Predict, for each race entry, whether the driver finishes in the points position
 | Source | Used for | In this repo? |
 |---|---|---|
 | [Ergast F1 API](http://ergast.com/mrd/) | results, grids, pit stops, qualifying, standings, lap times | ✅ [`data/ergast-f1-data.zip`](data/ergast-f1-data.zip) (incl. `lap_times.csv`) |
-| [Open-Meteo](https://open-meteo.com/) | race-day temperature, rain, wind per circuit | ✅ [`data/weather/`](data/weather/) raw extracts |
+| [Open-Meteo](https://open-meteo.com/) | race-day temperature, rain, wind per circuit | 🔄 sample responses in [`data/weather/`](data/weather/); full table rebuilt by [`code/build_weather_circuit.R`](code/build_weather_circuit.R) |
 | Pirelli Motorsport track data | tyre stress, lateral load, grip, downforce per GP | ✅ [`data/F1_pirelli.csv`](data/F1_pirelli.csv), [`data/F1_pirelli_with_turns.csv`](data/F1_pirelli_with_turns.csv) |
 | Race weekend schedule | FP/quali/sprint session times (used to align weather windows) | ✅ [`data/f1_race_schedule.csv`](data/f1_race_schedule.csv) |
-| Assembled weather table (`weather_circuit.csv`) | join weather onto each race | ⚠️ rebuild from `data/weather/` — see [reproduction](#reproduce) |
+| Assembled weather table (`weather_circuit.csv`) | join weather onto each race | ⚠️ not committed — rebuild with `Rscript code/build_weather_circuit.R`, see [reproduction](#reproduce) |
 
 ## Method
 
@@ -66,14 +66,16 @@ Feature importance is dominated by experience/podium history, grid position, wea
 ```bash
 # from projects/f1-driver-points-prediction/
 unzip data/ergast-f1-data.zip -d data/ergast     # provides results.csv, lap_times.csv, ...
+Rscript code/build_weather_circuit.R             # rebuilds data/weather_circuit.csv from Open-Meteo (~3 min, network)
 ```
 
 Then in R:
 
 ```r
-rmarkdown::render("code/01_data-prep-and-modeling.Rmd")
+# working directory must be the project root so data/... paths resolve
+rmarkdown::render("code/01_data-prep-and-modeling.Rmd", knit_root_dir = normalizePath("."))
 ```
 
 Packages: `dplyr`, `lubridate`, `ggplot2`, `randomForest`, `xgboost`, `caret`, `iml`, `tools`.
 
-**Known gap:** `data/weather_circuit.csv` (the per-race weather table assembled from the Open-Meteo extracts) is generated inside the original session and is not committed. The raw extracts in `data/weather/` plus the parsing logic at the top of `01_data-prep-and-modeling.Rmd` rebuild it; re-fetching from the Open-Meteo archive API also works.
+**Data note:** `data/weather_circuit.csv` (the per-race weather table) is not committed. It is rebuilt in one step by `code/build_weather_circuit.R`, which fetches a ±3-day hourly window (UTC, matching the committed sample responses) around every race from 2010 on (~305 windows) from the Open-Meteo archive API and assembles the exact layout that the parsing logic at the top of `01_data-prep-and-modeling.Rmd` expects (77-location metadata block + hourly rows tagged by `location_id`).

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piyapat Jantawee — Course projects · โปรเจครายวิชา</title>
+<meta name="description" content="Course projects and coursework — Statistics and Data Science portfolio, King Mongkut's University of Technology Thonburi (KMUTT)">
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1a2233; --muted:#5b6472;
+    --accent:#0b5fff; --accent-ink:#ffffff; --line:#e4e7ee; --chip:#eef2ff;
+    --good:#087f5b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{background:#101828;color:#fff;padding:56px 0 0}
+  header h1{margin:0 0 6px;font-size:2rem;letter-spacing:-.01em}
+  header .th{color:#aeb8cc;font-size:.95rem;margin:0 0 18px}
+  header .meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#cfd6e4;font-size:.92rem;padding-bottom:22px}
+  header a{color:#8ab4ff}
+  nav.tabs{background:#101828;border-top:1px solid #1e293b;position:sticky;top:0;z-index:10}
+  nav.tabs .wrap{display:flex;gap:4px}
+  nav.tabs a{display:block;padding:13px 18px;color:#aeb8cc;text-decoration:none;
+    font-size:.95rem;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+  nav.tabs a:hover{color:#fff}
+  nav.tabs a.active{color:#fff;border-bottom-color:var(--accent)}
+  h2{font-size:1.3rem;margin:44px 0 6px}
+  h2 .th{display:block;font-weight:400;color:var(--muted);font-size:.9rem}
+  .grid{display:grid;gap:16px;margin-top:18px}
+  @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+  .card h3{margin:0;font-size:1.05rem}
+  .card .kind{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+  .card p{margin:0;color:var(--muted);font-size:.93rem}
+  .card .thline{color:#7b8494;font-size:.86rem}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--chip);color:#27429a;border-radius:999px;padding:2px 10px;font-size:.78rem}
+  .metrics{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+  .metric{background:#f1f7ee;border:1px solid #d7e8cd;border-radius:8px;
+    padding:6px 10px;font-size:.8rem}
+  .metric b{display:block;font-size:1rem;color:var(--good)}
+  .links{margin-top:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem}
+  .links a{color:var(--accent);text-decoration:none;font-weight:600}
+  .links a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:16px;font-size:.92rem}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:#f1f3f7;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  tr:last-child td{border-bottom:0}
+  td a{color:var(--accent);text-decoration:none;font-weight:600}
+  .about{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:18px 22px;margin-top:18px;color:var(--muted);font-size:.95rem}
+  footer{margin:56px 0 40px;color:var(--muted);font-size:.85rem;text-align:center}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Piyapat Jantawee</h1>
+    <p class="th">ปิยพัทธ์ จันทร์ทวี · สาขา Statistics and Data Science</p>
+    <div class="meta">
+      <span>B.Sc. Statistics and Data Science</span>
+      <span>KMUTT — King Mongkut's University of Technology Thonburi</span>
+      <span>Student ID 65090502417</span>
+      <a href="https://github.com/uiuiui219/stat-ds-portfolio">GitHub repository →</a>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="wrap">
+    <a href="index.html">โปรเจคจบ · Graduate project</a>
+    <a href="course-projects.html" class="active">โปรเจครายวิชา · Course projects</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <h2>Course projects <span class="th">โปรเจกต์ระหว่างเรียนรายวิชา</span></h2>
+
+  <div class="grid">
+    <div class="card">
+      <span class="kind">STD 371 · Statistical Learning I</span>
+      <h3>IBM Employee Attrition</h3>
+      <p>Attrition prediction with SMOTE, PCA and clustering-based segmentation; models compared on F1 and profiled for an HR audience.</p>
+      <p class="thline">ทำนายการลาออกของพนักงาน จำแนกกลุ่มเสี่ยงสูงสุดพร้อมปัจจัยสำคัญ</p>
+      <div class="metrics">
+        <span class="metric">Best model<b>Random Forest</b></span>
+        <span class="metric">Top-risk segment<b>38.18% attrition</b></span>
+      </div>
+      <div class="chips">
+        <span class="chip">SMOTE</span><span class="chip">PCA</span>
+        <span class="chip">Clustering + 4 CVI</span><span class="chip">glmnet</span><span class="chip">R</span>
+      </div>
+      <div class="links">
+        <a href="reports/ibm-full-report.html">ดูรายงาน HTML →</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/projects/ibm-attrition-prediction">Project folder →</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="kind">STD 471 · Statistical Learning II</span>
+      <h3>Texas Road-Accident Severity</h3>
+      <p>Severity prediction for crashes in San Antonio: PCA + k-means/EM clustering feeding an asymmetric comparison of Random Forest, XGBoost and BART (5-fold CV), with SHAP interpretation.</p>
+      <p class="thline">ทำนายความรุนแรงอุบัติเหตุทางถนนในซานอันโตนิโอ ผสม unsupervised + supervised learning เปรียบเทียบ 3 โมเดล</p>
+      <div class="metrics">
+        <span class="metric">Models compared<b>RF · XGBoost · BART</b></span>
+        <span class="metric">Validation<b>5-fold CV</b></span>
+        <span class="metric">Interpretation<b>SHAP</b></span>
+      </div>
+      <div class="chips">
+        <span class="chip">PCA</span><span class="chip">k-means / EM</span>
+        <span class="chip">BART</span><span class="chip">XGBoost</span>
+        <span class="chip">SHAP</span><span class="chip">R</span>
+      </div>
+      <div class="links">
+        <a href="reports/texas-full-report.html">ดูรายงาน HTML →</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/projects/texas-accident-severity">Project folder →</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="kind">CSS 475 · Business Intelligence</span>
+      <h3>Power BI Dashboards</h3>
+      <p>A four-source BI final project (e-commerce, retail, telecom, entertainment) plus lab dashboards with geospatial map visuals.</p>
+      <p class="thline">แดชบอร์ด Power BI หลายแหล่งข้อมูล + แล็บแผนที่ภูมิศาสตร์</p>
+      <div class="chips">
+        <span class="chip">DAX</span><span class="chip">Power Query</span>
+        <span class="chip">Star schema</span><span class="chip">GeoJSON maps</span>
+      </div>
+      <div class="links">
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/projects/power-bi-dashboards">Project folder →</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/power-bi-dashboards/final/report.pdf">Report (PDF)</a>
+      </div>
+    </div>
+  </div>
+
+  <h2>Coursework <span class="th">งานรายวิชา</span></h2>
+  <table>
+    <thead><tr><th>Course</th><th>Topics</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/coursework/std-371-statistical-learning-1">STD 371 — Statistical Learning I</a></td>
+        <td>Regression, GLM &amp; SMOTE, KNN, glmnet, trees, random forest, clustering, association rules</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/coursework/std-471-statistical-learning-2">STD 471 — Statistical Learning II</a></td>
+        <td>Cross-validation, GLM, SVM, BART, LSTM, neural networks, clustering</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/coursework/std-334-multivariate">STD 334 — Multivariate Analysis</a></td>
+        <td>PCA, factor analysis, cluster analysis, discriminant analysis</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/coursework/std-335-forecasting">STD 335 — Forecasting</a></td>
+        <td>Exponential smoothing, ACF/PACF, decomposition, stationarity tests</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/coursework/std-421-design-of-experiment">STD 421 — Design of Experiment</a></td>
+        <td>CRD, RCBD/BIBD, LSD, factorial designs</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/coursework/std-496-data-storytelling">STD 496 — Data Storytelling</a></td>
+        <td>Data quality, EDA, decision trees (drying-mango case)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Tech stack <span class="th">เครื่องมือ</span></h2>
+  <div class="chips">
+    <span class="chip">R (tidyverse, caret, xgboost, BART, mclust, SHAP)</span>
+    <span class="chip">Python (pandas, scikit-learn)</span>
+    <span class="chip">Power BI (DAX, Power Query)</span>
+    <span class="chip">Excel</span>
+    <span class="chip">Git / GitHub</span>
+    <span class="chip">RMarkdown</span>
+  </div>
+
+  <div class="about">
+    <strong>About this page.</strong> Every entry links to the full report and the code that produced it.
+    Datasets over 10&nbsp;MB are documented with download sources in each project README instead of being committed.
+    The graduate project lives in the <a href="index.html">โปรเจคจบ · Graduate project</a> tab.
+    <br><span style="color:#7b8494">ทุกโปรเจกต์มีรายงานเต็มและโค้ดจริงกำกับ — ข้อมูลขนาดใหญ่มีลิงก์ดาวน์โหลดระบุใน README แต่ละโปรเจกต์ · โปรเจคจบอยู่ในแท็บแรก</span>
+  </div>
+
+</main>
+
+<footer>
+  © 2026 Piyapat Jantawee · <a href="https://github.com/uiuiui219/stat-ds-portfolio">github.com/uiuiui219/stat-ds-portfolio</a>
+</footer>
+
+</body>
+</html>

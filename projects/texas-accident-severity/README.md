@@ -41,7 +41,7 @@ Severity classes 1–2 were sampled at 20 %, classes 3–4 at 50 % (`set.seed(12
 
 ## Result
 
-**XGBoost produced the highest F1-score** of the three models (accuracy above 50 % on a 4-class imbalanced problem) and was carried forward for variable analysis. Full numbers and plots: [`report/full-report.pdf`](report/full-report.pdf).
+The report carries an **asymmetric comparison of Random Forest, XGBoost and BART** under 5-fold CV (each model's precision/recall/F1/accuracy averages) and then runs SHAP variable-importance analysis on the XGBoost fit. Full numbers and plots: [`report/full-report.pdf`](report/full-report.pdf) — see also the [rendered HTML on the site](https://uiuiui219.github.io/stat-ds-portfolio/reports/texas-full-report.html).
 
 ## Code
 
@@ -55,9 +55,9 @@ Severity classes 1–2 were sampled at 20 %, classes 3–4 at 50 % (`set.seed(12
 ## Reproduce
 
 ```r
-# from projects/texas-accident-severity/
+# from projects/texas-accident-severity/ (working directory must be the project root)
 install.packages(c("arrow","dplyr","ggplot2","mclust","randomForest","xgboost","BART","SHAPforxgboost","UniversalCVI"))
-rmarkdown::render("code/01_full-report.Rmd")
+rmarkdown::render("code/01_full-report.Rmd", knit_root_dir = normalizePath("."))
 ```
 
 **Packages:** `dplyr`, `arrow`, `ggplot2`, `lubridate`, `mgcv`, `mclust`, `randomForest`, `xgboost`, `BART`, `pROC`, `UniversalCVI`, `pheatmap`, `SHAPforxgboost`.

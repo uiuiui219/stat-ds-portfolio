@@ -1,3 +1,6 @@
+# Local toolchain (R package library installed for rendering — never committed)
+.tools/
+
 # R session files
 .Rhistory
 .RData
@@ -12,6 +15,9 @@
 Thumbs.db
 
 # Large raw datasets — download sources are documented in each README
+# Unzipped from ergast-f1-data.zip (weather_circuit.csv IS committed: CI needs it to render F1;
+# rebuildable with code/build_weather_circuit.R from the Open-Meteo archive)
+**/data/ergast/
 *.parquet
 **/accident.zip
 **/lap_times.csv

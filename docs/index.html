@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piyapat Jantawee — Graduate Project · โปรเจคจบ ป.ตรี</title>
+<meta name="description" content="Graduate project (F1 Driver Points Prediction) — Statistics and Data Science portfolio, King Mongkut's University of Technology Thonburi (KMUTT)">
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1a2233; --muted:#5b6472;
+    --accent:#0b5fff; --accent-ink:#ffffff; --line:#e4e7ee; --chip:#eef2ff;
+    --good:#087f5b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{background:#101828;color:#fff;padding:56px 0 0}
+  header h1{margin:0 0 6px;font-size:2rem;letter-spacing:-.01em}
+  header .th{color:#aeb8cc;font-size:.95rem;margin:0 0 18px}
+  header .meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#cfd6e4;font-size:.92rem;padding-bottom:22px}
+  header a{color:#8ab4ff}
+  nav.tabs{background:#101828;border-top:1px solid #1e293b;position:sticky;top:0;z-index:10}
+  nav.tabs .wrap{display:flex;gap:4px}
+  nav.tabs a{display:block;padding:13px 18px;color:#aeb8cc;text-decoration:none;
+    font-size:.95rem;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+  nav.tabs a:hover{color:#fff}
+  nav.tabs a.active{color:#fff;border-bottom-color:var(--accent)}
+  h2{font-size:1.3rem;margin:44px 0 6px}
+  h2 .th{display:block;font-weight:400;color:var(--muted);font-size:.9rem}
+  .grid{display:grid;gap:16px;margin-top:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:24px 26px;display:flex;flex-direction:column;gap:12px}
+  .card.hero{border:2px solid var(--accent);box-shadow:0 6px 24px rgba(11,95,255,.10)}
+  .card h3{margin:0;font-size:1.35rem}
+  .card .kind{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+  .card p{margin:0;color:var(--muted);font-size:.95rem}
+  .card .thline{color:#7b8494;font-size:.88rem}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--chip);color:#27429a;border-radius:999px;padding:2px 10px;font-size:.78rem}
+  .metrics{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+  .metric{background:#f1f7ee;border:1px solid #d7e8cd;border-radius:8px;
+    padding:6px 10px;font-size:.8rem}
+  .metric b{display:block;font-size:1.1rem;color:var(--good)}
+  .links{margin-top:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:.9rem}
+  .links a{color:var(--accent);text-decoration:none;font-weight:600}
+  .links a:hover{text-decoration:underline}
+  ol.steps{margin:8px 0 0;padding-left:22px;color:var(--muted);font-size:.94rem}
+  ol.steps li{margin-bottom:6px}
+  ol.steps b{color:var(--ink)}
+  .about{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:18px 22px;margin-top:18px;color:var(--muted);font-size:.95rem}
+  footer{margin:56px 0 40px;color:var(--muted);font-size:.85rem;text-align:center}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Piyapat Jantawee</h1>
+    <p class="th">ปิยพัทธ์ จันทร์ทวี · สาขา Statistics and Data Science</p>
+    <div class="meta">
+      <span>B.Sc. Statistics and Data Science</span>
+      <span>KMUTT — King Mongkut's University of Technology Thonburi</span>
+      <span>Student ID 65090502417</span>
+      <a href="https://github.com/uiuiui219/stat-ds-portfolio">GitHub repository →</a>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="wrap">
+    <a href="index.html" class="active">โปรเจคจบ · Graduate project</a>
+    <a href="course-projects.html">โปรเจครายวิชา · Course projects</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <h2>Graduate project <span class="th">โปรเจคจบ ป.ตรี — ผลงานชิ้นเอกของพอร์ตโฟลิโอนี้</span></h2>
+
+  <div class="grid">
+    <div class="card hero">
+      <span class="kind">Graduate project · โปรเจคจบ ป.ตรี</span>
+      <h3>F1 Driver Points Prediction</h3>
+      <p>Predicting whether a Formula 1 driver finishes in the points (Top 10) from race-weekend features: driver history, grid, circuit clustering and race-day weather — with SHAP-based interpretation of what actually drives a scoring finish.</p>
+      <p class="thline">ทำนายการเข้าเส้นชัยในกลุ่มคะแนนของนักขับ F1 จากผลงานย้อนหลัง ตำแหน่งออกสตาร์ท สภาพอากาศ และการจัดกลุ่มสนาม พร้อมอธิบายโมเดลด้วย SHAP</p>
+      <div class="metrics">
+        <span class="metric">ROC-AUC<b>0.883</b></span>
+        <span class="metric">Accuracy<b>0.810</b></span>
+        <span class="metric">F1-Score<b>0.822</b></span>
+        <span class="metric">Test set<b>2024 season</b></span>
+      </div>
+      <div class="chips">
+        <span class="chip">XGBoost</span><span class="chip">Random Forest</span>
+        <span class="chip">Gower + Hierarchical Clustering</span><span class="chip">Time-series CV</span>
+        <span class="chip">SHAP</span><span class="chip">Power BI</span><span class="chip">R</span>
+      </div>
+      <div class="links">
+        <a href="reports/f1-data-prep-and-modeling.html">ดูรายงาน HTML (Rendered report) →</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">Poster (PDF)</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">Full report (PDF)</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/projects/f1-driver-points-prediction">Source &amp; data →</a>
+      </div>
+    </div>
+  </div>
+
+  <h2>How it works <span class="th">ขั้นตอนการทำงาน</span></h2>
+  <div class="card">
+    <ol class="steps">
+      <li><b>Data &amp; feature engineering</b> — results, grids, pit stops and standings from the Ergast F1 API (2019–2024, 2,559 race entries); race-day temperature/rain/wind from Open-Meteo aligned to local race windows; tyre-stress data from Pirelli track data. Driver age, experience, rolling podium/points history, constructor wins and DNF flags — with an explicit data-leakage review (no post-race information).</li>
+      <li><b>Circuit clustering</b> — 128 circuits → Gower distance → hierarchical clustering → <b>5 clusters</b> chosen by Average Silhouette Width; cluster membership becomes a feature.</li>
+      <li><b>Modelling</b> — Random Forest vs <b>XGBoost</b> with grid-searched hyperparameters, evaluated with time-series cross-validation (expanding window, 4 folds): train 2019–2023, test = <b>2024 season</b>.</li>
+      <li><b>Interpretation</b> — SHAP (beeswarm + interactions): weather and circuit-cluster features both land in the top 5.</li>
+      <li><b>Deployment view</b> — a 3-class podium / scoring / no-points assignment under F1 quota constraints (3 + 7 + 10), presented in Power BI.</li>
+    </ol>
+    <p class="thline">ข้อมูลดิบขนาดใหญ่ไม่ได้ commit ลง repo — README ของโปรเจกต์ระบุแหล่งดาวน์โหลดและวิธี reproduce ทั้งหมด รวมถึงสคริปต์ build weather_circuit.csv ที่ทำซ้ำได้จาก Open-Meteo</p>
+  </div>
+
+  <div class="about">
+    <strong>About this page.</strong> This landing page presents the graduate project only —
+    the single project with a completed, reviewed final report.
+    Course projects (IBM attrition, Texas accident severity, Power BI dashboards) and
+    homework/lab work live in the
+    <a href="course-projects.html">โปรเจครายวิชา · Course projects</a> tab.
+    <br><span style="color:#7b8494">หน้านี้นำเสนอเฉพาะโปรเจคจบ — โปรเจครายวิชาและงาน coursework อยู่ในแท็บ “โปรเจครายวิชา”</span>
+  </div>
+
+</main>
+
+<footer>
+  © 2026 Piyapat Jantawee · <a href="https://github.com/uiuiui219/stat-ds-portfolio">github.com/uiuiui219/stat-ds-portfolio</a>
+</footer>
+
+</body>
+</html>

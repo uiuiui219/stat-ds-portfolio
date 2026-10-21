@@ -10,6 +10,7 @@
 
 | File | What it is |
 |---|---|
+| [`report/Final-Report-2414_2417.html`](report/Final-Report-2414_2417.html) | Full report, rendered — opens directly in the browser ([also on the site](https://uiuiui219.github.io/stat-ds-portfolio/reports/ibm-full-report.html)) |
 | [`code/01_full-report.Rmd`](code/01_full-report.Rmd) | Full report source — read it for the complete narrative (knit to HTML/Word/PDF) |
 | [`code/02_eda-experiments.R`](code/02_eda-experiments.R) | EDA + clustering experiments |
 | [`code/03_encoding-experiments.R`](code/03_encoding-experiments.R) | Categorical encoding experiments |
@@ -37,15 +38,15 @@ IBM HR Analytics Employee Attrition & Performance (public HR dataset): 1,058 emp
 - **Random Forest achieved the highest F1-score** among the compared models → used for variable-importance analysis.
 - The highest-risk cluster (cluster 2) shows **38.18 % attrition (21 of 55 employees)**; its drivers are low **JobInvolvement** (β ≈ −0.758), low **StockOptionLevel** (β ≈ −0.776) and low **JobSatisfaction** (β ≈ −0.520).
 
-Full tables and figures: [`code/01_full-report.Rmd`](code/01_full-report.Rmd).
+Full tables and figures: [`code/01_full-report.Rmd`](code/01_full-report.Rmd), or the [rendered report](report/Final-Report-2414_2417.html).
 
 ## Reproduce
 
 ```r
-# from projects/ibm-attrition-prediction/
+# from projects/ibm-attrition-prediction/ (working directory must be the project root)
 install.packages(c("dplyr","ggplot2","psych","factoextra","caret","glmnet",
                    "randomForest","xgboost","mclust","UniversalCVI","BayesCVI","smotefamily"))
-rmarkdown::render("code/01_full-report.Rmd")
+rmarkdown::render("code/01_full-report.Rmd", knit_root_dir = normalizePath("."))
 ```
 
 **Packages:** `dplyr`, `ggplot2`, `ggpubr`, `imager`, `mvtnorm`, `e1071`, `mclust`, `UniversalCVI`, `BayesCVI`, `corrplot`, `psych`, `glmnet`, `factoextra`, `caret`, `randomForest`, `xgboost`, `performanceEstimation`, `smotefamily`, `MASS`, `Ckmeans.1d.dp`.
