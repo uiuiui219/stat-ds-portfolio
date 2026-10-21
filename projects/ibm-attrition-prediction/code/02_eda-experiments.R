@@ -68,7 +68,6 @@ colnames(mat_test)[1] <- "Attrition"
 mat_test <- data.frame(mat_test)
 mat_test$Attrition <- as.factor(mat_test$Attrition - 1)
 
-library(performanceEstimation)
 library(smotefamily)
 
 sm <- BLSMOTE(ibm_mat_att[,-1], ibm_mat_att$Attrition, K=5 ,C=5)

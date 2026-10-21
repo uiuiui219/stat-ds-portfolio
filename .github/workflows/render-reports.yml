@@ -90,7 +90,6 @@ jobs:
             any::caret
             any::randomForest
             any::xgboost
-            url::https://cran.r-project.org/src/contrib/Archive/performanceEstimation/performanceEstimation_1.1.0.tar.gz
             any::smotefamily
             any::MASS
             any::Ckmeans.1d.dp

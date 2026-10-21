@@ -49,4 +49,4 @@ install.packages(c("dplyr","ggplot2","psych","factoextra","caret","glmnet",
 rmarkdown::render("code/01_full-report.Rmd", knit_root_dir = normalizePath("."))
 ```
 
-**Packages:** `dplyr`, `ggplot2`, `ggpubr`, `imager`, `mvtnorm`, `e1071`, `mclust`, `UniversalCVI`, `BayesCVI`, `corrplot`, `psych`, `glmnet`, `factoextra`, `caret`, `randomForest`, `xgboost`, `performanceEstimation`, `smotefamily`, `MASS`, `Ckmeans.1d.dp`.
+**Packages:** `dplyr`, `ggplot2`, `ggpubr`, `imager`, `mvtnorm`, `e1071`, `mclust`, `UniversalCVI`, `BayesCVI`, `corrplot`, `psych`, `glmnet`, `factoextra`, `caret`, `randomForest`, `xgboost`, `smotefamily`, `MASS`, `Ckmeans.1d.dp`.
