@@ -144,7 +144,7 @@ xgb_cv <- function(data, target_var, n_iter = 10, test_size = 0.2) {
     test <- data[-idx, ]
     dtrain <- xgb.DMatrix(data = as.matrix(train[,-which(names(train)==target_var)]), label = train[[target_var]])
     dtest <- xgb.DMatrix(data = as.matrix(test[,-which(names(test)==target_var)]), label = test[[target_var]])
-    xgb_model <- xgboost(data = dtrain, nrounds = 100, objective = "binary:logistic", verbose = 0)
+    xgb_model <- xgb.train(params = list(objective = "binary:logistic"), data = dtrain, nrounds = 100, verbose = 0)
     pred <- ifelse(predict(xgb_model, dtest) > 0.5, 1, 0)
     cm <- confusionMatrix(as.factor(pred), as.factor(test[[target_var]]))
     acc[i] <- cm$overall["Accuracy"]
@@ -219,7 +219,7 @@ rf_model <- randomForest(class ~ ., data = smt_rf, ntree = 100, importance = TRU
 importance(rf_model)
 
 dtrain <- xgb.DMatrix(data = as.matrix(smt_xg[,-ncol(smt_xg)]), label = smt_xg$class)
-xgb_model <- xgboost(data = dtrain, nrounds = 100, objective = "binary:logistic", verbose = 0)
+xgb_model <- xgb.train(params = list(objective = "binary:logistic"), data = dtrain, nrounds = 100, verbose = 0)
 xgb_imp <- xgb.importance(feature_names = colnames(smt_xg)[-ncol(smt_xg)], model = xgb_model)
 ```
 
