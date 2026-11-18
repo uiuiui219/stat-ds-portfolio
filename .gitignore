@@ -1,6 +1,11 @@
 # Local toolchain (R package library installed for rendering — never committed)
 .tools/
 
+# Local agent/tooling config (lives on my machine, not part of the portfolio)
+.agents/
+.claude/
+skills-lock.json
+
 # R session files
 .Rhistory
 .RData
