@@ -6,6 +6,10 @@
 .claude/
 skills-lock.json
 
+# Locally rendered report output — CI renders into docs/reports/ and the curated
+# copy lives in report/, so the render next to the .Rmd stays out of the repo
+projects/ibm-attrition-prediction/code/01_full-report.html
+
 # R session files
 .Rhistory
 .RData
