@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-check exam — F1 Driver Points Prediction</title>
+<meta name="description" content="End-to-end self-check questions for the F1 Driver Points Prediction project: problem framing, data & leakage, clustering, model selection, validation, results, business fit, and ownership — with a 0/1/2 rubric, quality notes and auto-scoring bar.">
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --ink:#1a2233; --muted:#5b6472;
+    --accent:#0b5fff; --line:#e4e7ee; --chip:#eef2ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.65 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+  header{background:#101828;color:#fff;padding:48px 0 0}
+  header h1{margin:0 0 6px;font-size:1.8rem}
+  header .th{color:#aeb8cc;font-size:.95rem;margin:0 0 18px}
+  header .meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#cfd6e4;font-size:.9rem;padding-bottom:22px}
+  a{color:#8ab4ff}
+  nav.tabs{background:#101828;border-top:1px solid #1e293b;position:sticky;top:0;z-index:10}
+  nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+  nav.tabs a{display:block;padding:13px 16px;color:#aeb8cc;text-decoration:none;
+    font-size:.92rem;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+  nav.tabs a:hover{color:#fff}
+  nav.tabs a.active{color:#fff;border-bottom-color:var(--accent)}
+  h2{font-size:1.25rem;margin:44px 0 4px}
+  .intro{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-top:14px;color:var(--muted);font-size:.95rem}
+  .intro b{color:var(--ink)}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-top:14px}
+  .q .qh{font-weight:700;font-size:1rem}
+  .q .qh .no{color:var(--accent)}
+  .q p{margin:8px 0 0;color:var(--muted);font-size:.92rem}
+  .meta-row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+  .tag{background:var(--chip);color:#27429a;border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:600}
+  .quality{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;font-size:.88rem;color:var(--muted)}
+  .quality b{color:var(--ink)}
+  .score{display:flex;gap:6px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .score span.lb{font-size:.85rem;color:var(--muted)}
+  .score button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font:inherit;font-size:.85rem;color:var(--ink)}
+  .score button.sel0{background:#fee2e2;border-color:#fca5a5}
+  .score button.sel1{background:#fef9c3;border-color:#fde047}
+  .score button.sel2{background:#dcfce7;border-color:#86efac}
+  code{background:#eef2ff;color:#27429a;border-radius:5px;padding:1px 6px;font-size:.85em}
+  .bar-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-top:18px;position:sticky;bottom:12px;box-shadow:0 4px 20px rgba(16,24,40,.10)}
+  .bar{height:10px;background:#eef2f6;border-radius:999px;overflow:hidden}
+  .bar>div{height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#0b5fff,#087f5b);transition:width .3s}
+  #band{font-weight:700;margin-top:8px}
+  footer{margin:48px 0 40px;color:var(--muted);font-size:.85rem;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Self-check exam — F1 Driver Points Prediction</h1>
+    <p class="th">ชุดข้อสอบ self-check: ตรวจว่าคุณตอบโครงงานตัวเองได้จริงทั้ง end-to-end</p>
+    <div class="meta">
+      <span>Source project: F1 Driver Points Prediction</span>
+      <a href="f1-project.html">← Project details page</a>
+      <a href="index.html">← Portfolio home</a>
+      <a href="exam-f1-th.html">Thai version →</a>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="wrap">
+    <a href="index.html">Graduate project</a>
+    <a href="f1-project.html">F1 end-to-end details</a>
+    <a href="exam-f1.html" class="active">Self-check exam</a>
+    <a href="exam-f1-th.html">Self-check exam (Thai)</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<div class="intro">
+  <p><b>How to use:</b> read each question, then answer out loud (or write it down) as though you were being interviewed.
+     Then grade yourself with the 0 / 1 / 2 rule shown at the bottom of each question. The live score bar tells you
+     whether your explanation is complete end-to-end or there is still a gap.</p>
+  <p><b>Rubric (same for all questions):</b><br>
+     <b>0</b> — you cannot answer without hedging, or you can only name the technique<br>
+     <b>1</b> — you can say <b>what</b> the step does, but the reason you chose it over an alternative is weak<br>
+     <b>2</b> — you deliver the full pattern <b>choice → reason → evidence → trade-off → (where needed) limitation</b> and the reason actually matches your project code / report.</p>
+</div>
+
+<h2>Section A — Problem framing &amp; ownership</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">A1.</span> Pitch this whole project to a decision-maker in 60 seconds — without starting with technical jargon.</div>
+  <div class="meta-row"><span class="tag">communication</span><span class="tag">synthesis (Bloom 5–6)</span></div>
+  <p>A strong answer: one concise outcome statement, the prediction scope (grouping drivers into podium / scoring / no-point buckets), and one honest limitation.</p>
+  <div class="quality"><b>What this tests:</b> your ability to compress the project into plain language, not jargon — and to volunteer a boundary without being asked.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">A2.</span> Why predict a <b>3-way group</b> (podium / scoring / no point) instead of a simple binary "will this driver reach Top-10"?</div>
+  <div class="meta-row"><span class="tag">problem framing</span><span class="tag">analysis (Bloom 4)</span></div>
+  <p>Three groups carry <b>two independent facts</b> in one model: who gets points at all, and who is likely on the podium (2nd–3rd vs the rest). A single binary collapses this.</p>
+  <div class="quality"><b>What this tests:</b> whether you can justify the bucket choice using <b>business logic</b> (prize money, constructor standings, race strategy), not just because the code does it.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">A3.</span> What exactly does <b>one row</b> in your dataset represent — a driver-race entry, a circuit, a season — and why does that choice matter?</div>
+  <div class="meta-row"><span class="tag">data grain</span><span class="tag">understanding (Bloom 2)</span></div>
+  <p>"One row = one driver's performance in one race" is the design you actually implemented. Explain why that grain (2,559 rows over 2019–2024) is the right level for this hypothesis.</p>
+  <div class="quality"><b>What this tests:</b> whether you know the data grain at the right level and can defend it narratively.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">A4.</span> Your data has <b>2,559 rows</b> — not the round number a quick count would suggest. Why is one row missing from the natural count?</div>
+  <div class="meta-row"><span class="tag">data awareness</span><span class="tag">recall (Bloom 2)</span></div>
+  <p>2024 round 3 (Australia GP) — <b>Logan Sargeant was withdrawn from the race after his FP2 crash</b>, so Williams fielded only one car. That single real-world event removes one row from the normal count.</p>
+  <div class="quality"><b>What this tests:</b> whether you noticed the one-row gap in the real data and can explain it with a real F1 story, not an invented excuse.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2 id="B2-B4">Section B — Data, features &amp; leakage (ข้อ B2–B4 อยู่ในหมวดนี้)</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">B1.</span> Which <b>four data sources</b> feed this project and what role does each play (Ergast / Open-Meteo / race schedule / academic notes)?</div>
+  <div class="meta-row"><span class="tag">data pipeline</span></div>
+  <p>Removing Open-Meteo would remove all weather features; removing the race schedule would break your race-window joins.</p>
+  <div class="quality"><b>What this tests:</b> ability to narrate the multi-source join, not just tick off names.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">B2.</span> <code>grid</code> is known <b>before the race starts</b> and correlates strongly with the result. Is it leakage? How do you defend using it?</div>
+  <div class="meta-row"><span class="tag">leakage nuance</span><span class="tag">analysis (Bloom 4)</span></div>
+  <p>It is <b>not</b> leakage — it is a legitimate pre-race signal. Leakage would be <b>any feature that is/was observed after the race already outcome is known</b> (e.g., race order itself). Distinguishing those two is the whole point.</p>
+  <div class="quality"><b>What this tests:</b> your grasp of the "legal" vs "illegal" leakage boundary, not just the word.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">B3.</span> Weather features (<code>avg_temperature / avg_rain / avg_wind_speed</code>) come from the <b>race window</b>, not the full day. Why that window, and what other window did you consider?</div>
+  <div class="meta-row"><span class="tag">feature engineering</span></div>
+  <p>A full-day average blurs the exact hours when the race happened; the race window aligns the feature with what the drivers actually faced.</p>
+  <div class="quality"><b>What this tests:</b> whether you can justify a feature-engineering choice using domain logic, not just syntax.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">B4.</span> Circuit-level features like <code>Race_DNF_Rate</code>, <code>Overtake_Rate</code> are built from <b>past races</b> at that circuit. Could that be leakage? Where is the line?</div>
+  <div class="meta-row"><span class="tag">leakage audit</span><span class="tag">evaluation (Bloom 5)</span></div>
+  <p>It's leakage <b>only</b> if those features include data from the race being predicted; using <b>historical</b> averages is legal — but the "how far back you go" question is the real trade-off to articulate.</p>
+  <div class="quality"><b>What this tests:</b> ability to argue the leakage boundary with a concrete rule you can state out loud.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">B5.</span> Why did you deliberately <b>drop <code>grid</code></b> in the final model (even though SHAP says it is the strongest predictor)?</div>
+  <div class="meta-row"><span class="tag">feature ablation</span><span class="tag">business reasoning</span></div>
+  <p>Because grid alone explains most of the prediction — the model becomes a near-copy of "who qualified where" and stops providing business insight about established drivers, teams or race dynamics.</p>
+  <div class="quality"><b>What this tests:</b> whether you can say the "less automation = more insight" trade-off out loud.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2>Section C — Circuit clustering</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">C1.</span> The code in the repo seems to build <b>k=3</b> circuit groups, but the written report mentions <b>k=5</b>. Which do you actually trust, and why the mismatch?</div>
+  <div class="meta-row"><span class="tag">code vs report</span><span class="tag">evaluation (Bloom 5)</span></div>
+  <p>The Rmd in the repo is one version; the report is another. A good answer names both sources, explains the mismatch, and says which one ends up in the final model.</p>
+  <div class="quality"><b>What this tests:</b> awareness that your own artefacts can disagree and that interviewers will spot it.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">C2.</span> Why <b>Gower distance + complete linkage</b> instead of Euclidean + k-means?</div>
+  <div class="meta-row"><span class="tag">distance choice</span><span class="tag">analysis (Bloom 4)</span></div>
+  <p>The circuit features mix numeric and categorical scales, and Gower handles mixed types natively, while k-means assumes Euclidean geometry that the mixed-type data does not satisfy.</p>
+  <div class="quality"><b>What this tests:</b> whether you can state a distance-metric choice for the actual (mixed-type) data.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">C3.</span> Before clustering you run <b>PCA</b> and keep the top components — why reduce first instead of clustering on the raw features?</div>
+  <div class="meta-row"><span class="tag">dimensionality reduction</span></div>
+  <p>Because the raw seven circuit variables are correlated and high-dimensional; PCA compresses them into a few stable axes and makes the cluster assignment cleaner.</p>
+  <div class="quality"><b>What this tests:</b> whether the defensible pipeline is in your head or only in the report.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">C4.</span> If you added 8 more circuit-level variables tomorrow, would the 3 clusters still hold? What would you actually do?</div>
+  <div class="meta-row"><span class="tag">pragmatic update</span><span class="tag">evaluation (Bloom 5)</span></div>
+  <p>Clusters <b>can</b> shift when features change — so you would re-run PCA → Gower → complete linkage → choose k again, and describe how you would judge whether the new clusters are better or just different.</p>
+  <div class="quality"><b>What this tests:</b> whether you know clustering is data-dependent and have a plan for re-running it.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2>Section D — Model selection</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">D1.</span> Why <b>Random Forest + XGBoost</b> and not a GLM or a naive baseline — and also, why not LightGBM / CatBoost / a neural net?</div>
+  <div class="meta-row"><span class="tag">model trade-off</span><span class="tag">analysis (Bloom 4)</span></div>
+  <p>The real reasons: ~2.5K rows is small for NNs, features are a numeric/categorical mix, GLMs force linearity on interactions RF/XGB capture natively — while LightGBM/CatBoost would add little beyond XGBoost given the dataset size.</p>
+  <div class="quality"><b>What this tests:</b> whether your model choice is a data-driven argument, not a fashion statement.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">D2.</span> Why did you <b>run both</b> RF and XGBoost instead of committing to one?</div>
+  <div class="meta-row"><span class="tag">bagging vs boosting</span></div>
+  <p>Two models over the same data let you <b>compare trade-offs</b> (bagging vs boosting behaviour on small tabular data) before committing to the final one.</p>
+  <div class="quality"><b>What this tests:</b> whether you actually ran a comparison as a design step, not just as a formality.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">D3.</span> You turn per-driver probabilities into a <b>final class with a quota rule (3 + 7 + 10)</b> instead of taking each driver's argmax. Why?</div>
+  <div class="meta-row"><span class="tag">model → business rule</span><span class="tag">synthesis (Bloom 5)</span></div>
+  <p>A real race produces exactly 3 podiums and 10 point-scorers; an unconstrained argmax could easily predict too many of one class. The quota rule mirrors that constraint.</p>
+  <div class="quality"><b>What this tests:</b> whether you move from a raw model to a "physically-valid" business rule.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">D4.</span> If you re-ran the pipeline with 100 different random seeds and averaged results, would the reported numbers change much — and would you report it that way instead?</div>
+  <div class="meta-row"><span class="tag">stochasticity</span><span class="tag">evaluation (Bloom 5)</span></div>
+  <p>The metrics would move a little within noise; you would report the mean ± range side-by-side with the single-seed run and say whether the conclusion is stable.</p>
+  <div class="quality"><b>What this tests:</b> awareness that RF/XGB are stochastic and whether you have a concrete plan to quantify that.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2>Section E — Validation strategy</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">E1.</span> Why not plain 5-fold random CV — instead you use <b>expanding-window time-series CV per race round</b>?</div>
+  <div class="meta-row"><span class="tag">validation design</span><span class="tag">analysis (Bloom 4)</span></div>
+  <p>Because races are ordered in time: a random fold can train on 2023 to score a 2019 row — i.e. <b>future-into-past leakage</b>. Expanding-window keeps training strictly before validation in time.</p>
+  <div class="quality"><b>What this tests:</b> whether you understand why temporal CV is the right tool for race data.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">E2.</span> Hyperparameters are tuned with caret <code>train()</code> using time-series folds, but reported numbers come from a held-out 2024 test. Why is that not tunnelling/leakage?</div>
+  <div class="meta-row"><span class="tag">train vs test boundary</span></div>
+  <p>Because tuning happens <b>inside</b> the training portion (before 2024), and the 2024 race set is held out only once for the final evaluation — no leakage into tuning.</p>
+  <div class="quality"><b>What this tests:</b> whether you can defend the boundary between CV-based tuning and a one-shot test.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">E3.</span> The current code computes Accuracy / F1 / precision / recall macros only — but the report also claims <b>ROC-AUC 0.883</b>. How do those numbers connect, and where does the AUC come from?</div>
+  <div class="meta-row"><span class="tag">metric lineage</span><span class="tag">evaluation (Bloom 5)</span></div>
+  <p>You should be able to say that the report number came from a branch of work not in the final repo, and that the code's macro-F1 is its own (equally valid) metric — being honest about the discrepancy is the strong answer, not inventing a link.</p>
+  <div class="quality"><b>What this tests:</b> whether you can be honest about multiple runs / versions and still explain their relationship.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">E4.</span> Why report <b>macro-F1</b> as the primary metric rather than accuracy or micro-F1?</div>
+  <div class="meta-row"><span class="tag">metric choice</span></div>
+  <p>Because <code>no_point</code> is a big majority group — accuracy and micro-F1 get inflated by it, while macro-F1 forces performance on each class (including the small <code class="text">podium</code> class).</p>
+  <div class="quality"><b>What this tests:</b> whether you can quote the skew and justify macro as the right lens.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2>Section F — Results</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">F1.</span> The report shows ROC-AUC 0.883 · Accuracy 0.810 · Precision 0.775 · Recall 0.875 · F1 = 0.822. Explain what <b>recall 0.875</b> actually means for a business reader.</div>
+  <div class="meta-row"><span class="tag">metric interpretation</span></div>
+  <p>"Of the drivers we should have caught, we caught 87.5%" — the model rarely misses someone it should have flagged. Explain it at the <b>race level</b> (which group dominates) and not just as an equation.</p>
+  <div class="quality"><b>What this tests:</b> translating a metric into a think-out-loud business statement under pressure.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">F2.</span> Someone challenges you: "these numbers might be cherry-picked". How do you show they are reproducible?</div>
+  <div class="meta-row"><span class="tag">reproducibility</span></div>
+  <p>A strong answer: point at the repo that re-runs end-to-end (Rmd + CI workflow) and show the <b>same number on a clean rebuild</b>, not the number that is only in the report.</p>
+  <div class="quality"><b>What this tests:</b> whether there is really a reproducible pipeline behind the number or only a nice report.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2>Section G — Business fit &amp; communication</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">G1.</span> Where exactly <b>can</b> this model support real decisions — and where must it <b>not</b> be used?</div>
+  <div class="meta-row"><span class="tag">business fit</span><span class="tag">analysis (Bloom 4)</span></div>
+  <p>Good answers list strategy decisions the model can plausibly inform (e.g., tyre/driver pairing theoretically at a given circuit type) and clearly name decisions it must not drive (e.g., safety, driver contracts) on its own.</p>
+  <div class="quality"><b>What this tests:</b> being able to say pragmatically where your predictions can help and where they cannot.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">G2.</span> A team principal asks "should I just not sign this driver because your model says so?" — how do you respond?</div>
+  <div class="meta-row"><span class="tag">communication</span><span class="tag">synthesis (Bloom 6)</span></div>
+  <p>You would cite the honesty of the prediction (probabilities, not verdicts), name the gaps the model cannot see, and turn it into "this adds a signal, it does not replace your job."</p>
+  <div class="quality"><b>What this tests:</b> whether you can communicate probabilistic output without overclaiming.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<h2>Section H — Behavioural &amp; ownership</h2>
+
+<div class="q">
+  <div class="qh"><span class="no">H1.</span> <b>Which decision in this project was the hardest, what did you choose, and why do you believe it was the right call?</b></div>
+  <div class="meta-row"><span class="tag">ownership</span><span class="tag">evaluation (Bloom 5)</span></div>
+  <p>A strong answer names a real fork (e.g., dropping <code class="text">grid</code>, choosing expanding-window CV, k=3 vs k=5), explains the alternative you rejected, and shows evidence for why the chosen path worked.</p>
+  <div class="quality"><b>What this tests:</b> whether you own a decision rather than attributing it to teammates or supervisors.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="q">
+  <div class="qh"><span class="no">H2.</span> What in this project <b>did not work as you hoped</b>, and how would you fix it next time?</div>
+  <div class="meta-row"><span class="tag">self-reflection</span></div>
+  <p>A strong answer is concrete (e.g., the code/report k mismatch, missing AUC in the final code, weather window assumptions) — naming a real gap with a concrete plan, not generic humility.</p>
+  <div class="quality"><b>What this tests:</b> whether you can point at your own work and see its limits rather than glossing over them.</div>
+  <div class="score"><span class="lb">Score yourself:</span>
+    <button data-score="0">0</button><button data-score="1">1</button><button data-score="2">2</button>
+  </div>
+</div>
+
+<div class="bar-box">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <div><b>Your score:</b> <span id="total">0</span> / <span id="maxTotal">2 × question count</span></div>
+    <div id="band">—</div>
+  </div>
+  <div class="bar"><div id="barFill"></div></div>
+  <p style="margin:6px 0 0;color:#7b8494;font-size:.85rem">
+    Bands: <b id="critLow">—</b> still has gaps · <b id="critMid">—</b> nearly complete end-to-end · <b id="critHigh">—</b> fully defensible
+  </p>
+  <button id="resetBtn" style="margin-top:10px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-size:.85rem">Reset all scores</button>
+</div>
+
+</main>
+
+<footer>
+  See also: <a href="f1-project.html">f1-project.html</a> · <a href="index.html">index.html</a> · <a href="https://github.com/uiuiui219/stat-ds-portfolio">GitHub repository</a>
+</footer>
+
+<script>
+  const Groups = document.querySelectorAll('.score');
+
+  function updateBar(){
+    let total = 0, given = 0, n = 0;
+    Groups.forEach(g => {
+      n++;
+      const s = parseInt(g.dataset.sel || '', 10);
+      if (!isNaN(s)) { total += s; given++; }
+    });
+    const maxTotal = n * 2;
+    const done = given === n;
+    document.getElementById('total').textContent = total;
+    document.getElementById('maxTotal').textContent = maxTotal;
+    document.getElementById('barFill').style.width = (maxTotal ? Math.min(100, (total / maxTotal) * 100) : 0) + '%';
+
+    const low  = Math.round(maxTotal * 0.55);
+    const high = Math.round(maxTotal * 0.75);
+    document.getElementById('critLow').textContent = '< ' + low;
+    document.getElementById('critMid').textContent = low + '–' + (high-1);
+    document.getElementById('critHigh').textContent = '≥ ' + high;
+
+    const bandEl = document.getElementById('band');
+    if (given === 0){
+      bandEl.textContent = 'not graded yet';
+      bandEl.style.color = '#7b8494';
+    } else if (!done){
+      bandEl.textContent = total + ': in progress (' + given + '/' + n + ' graded)';
+      bandEl.style.color = '#7b8494';
+    } else if (total < low){
+      bandEl.textContent = 'gaps remain';
+      bandEl.style.color = '#b45309';
+    } else if (total < high){
+      bandEl.textContent = 'nearly complete end-to-end';
+      bandEl.style.color = '#0b5fff';
+    } else {
+      bandEl.textContent = 'fully defensible';
+      bandEl.style.color = '#087f5b';
+    }
+  }
+
+  Groups.forEach(g => {
+    const btns = g.querySelectorAll('button');
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        g.dataset.sel = btn.dataset.score;
+        btns.forEach(b => b.classList.remove('sel0','sel1','sel2'));
+        btn.classList.add('sel' + btn.dataset.score);
+        updateBar();
+      });
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    Groups.forEach(g => {
+      g.querySelectorAll('button').forEach(b => b.classList.remove('sel0','sel1','sel2'));
+    });
+    updateBar();
+  });
+
+  updateBar();
+</script>
+
+</body>
+</html>

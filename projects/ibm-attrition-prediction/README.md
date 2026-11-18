@@ -4,13 +4,13 @@
 
 > **โปรเจกต์รายวิชา STD 371** — ทำนายการลาออกของพนักงาน พร้อมจำแนกกลุ่มพนักงานที่มีความเสี่ยงสูงสุดและวิเคราะห์ปัจจัยที่ส่งผล
 
-**Team:** 65090502414 ธนวินท์ แสงวิสุทธิ์ · 65090502417 ปิยพัทธ์ จันทร์ทวี
+**Team:** ธนวินท์ แสงวิสุทธิ์ · ปิยพัทธ์ จันทร์ทวี
 
 ## Deliverables
 
 | File | What it is |
 |---|---|
-| [`report/Final-Report-2414_2417.html`](report/Final-Report-2414_2417.html) | Full report, rendered — opens directly in the browser ([also on the site](https://uiuiui219.github.io/stat-ds-portfolio/reports/ibm-full-report.html)) |
+| [`report/ibm-attrition-report.html`](report/ibm-attrition-report.html) | Full report, rendered — opens directly in the browser ([also on the site](https://uiuiui219.github.io/stat-ds-portfolio/reports/ibm-full-report.html)) |
 | [`code/01_full-report.Rmd`](code/01_full-report.Rmd) | Full report source — read it for the complete narrative (knit to HTML/Word/PDF) |
 | [`code/02_eda-experiments.R`](code/02_eda-experiments.R) | EDA + clustering experiments |
 | [`code/03_encoding-experiments.R`](code/03_encoding-experiments.R) | Categorical encoding experiments |
@@ -23,7 +23,9 @@ Identify employees likely to leave, and characterise the riskiest group well eno
 
 ## Data
 
-IBM HR Analytics Employee Attrition & Performance (public HR dataset): 1,058 employees, mixed numeric/categorical features (age, tenure, satisfaction, income, overtime, …). Provided inside [`data/`](data/). Columns with zero variance (`Over18`, `StandardHours`, `EmployeeCount`, `EmployeeNumber`) are dropped at load time.
+Source: [**IBM HR Analytics Employee Attrition & Performance** on Kaggle](https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset) (public HR dataset).
+
+1,058 employees, mixed numeric/categorical features (age, tenure, satisfaction, income, overtime, …). A train/test split of the data is included inside [`data/`](data/). Columns with zero variance (`Over18`, `StandardHours`, `EmployeeCount`, `EmployeeNumber`) are dropped at load time.
 
 ## Method
 
@@ -38,7 +40,7 @@ IBM HR Analytics Employee Attrition & Performance (public HR dataset): 1,058 emp
 - **Random Forest achieved the highest F1-score** among the compared models → used for variable-importance analysis.
 - The highest-risk cluster (cluster 2) shows **38.18 % attrition (21 of 55 employees)**; its drivers are low **JobInvolvement** (β ≈ −0.758), low **StockOptionLevel** (β ≈ −0.776) and low **JobSatisfaction** (β ≈ −0.520).
 
-Full tables and figures: [`code/01_full-report.Rmd`](code/01_full-report.Rmd), or the [rendered report](report/Final-Report-2414_2417.html).
+Full tables and figures: [`code/01_full-report.Rmd`](code/01_full-report.Rmd), or the [rendered report](report/ibm-attrition-report.html).
 
 ## Reproduce
 

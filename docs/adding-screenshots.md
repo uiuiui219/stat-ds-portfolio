@@ -10,7 +10,6 @@ Power BI `.pbix` files render nothing on GitHub — a recruiter clicking the lin
 
    ```
    projects/power-bi-dashboards/final/screenshots/page-01-overview.png
-   projects/power-bi-dashboards/labs/screenshots/page-01-map.png
    ```
 
    Keep each image **under ~1 MB** (scale to ~1600 px wide) so the repo stays light.
