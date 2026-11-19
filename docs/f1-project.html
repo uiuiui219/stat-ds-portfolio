@@ -105,7 +105,7 @@
 
   <h2>1 · Research question <span class="th">โจทย์และวัตถุประสงค์</span></h2>
   <div class="card">
-    <p><b>Task:</b> a binary classification of whether a driver scores points in a race — the eight scoring positions in the F1 points system, i.e. a finish in the top ten.</p>
+    <p><b>Task:</b> a binary classification of whether a driver scores points in a race, which in the current F1 points system means finishing in the top ten.</p>
     <p><b>Unit of analysis:</b> one row is one driver in one race (a race entry). 2019–2024, <b>2,559 race entries</b>.</p>
     <p><b>Objectives:</b> (1) classify and group circuits by their characteristics, (2) compare the performance of prediction models for a driver's points in each race, and (3) analyse and explain how much each factor contributes to a driver scoring points.</p>
     <p class="last"><b>Inputs:</b> only information available before the race — driver and team history, grid position, circuit characteristics and weather.</p>
@@ -132,8 +132,8 @@
   <div class="card">
     <p>Variables are organised in six groups: basic driver and team information, experience and performance, race data, weather and race context, circuit physical characteristics, and circuit technical characteristics.</p>
     <table>
-      <tr><th>Feature</th><th>Why it exists before the race</th></tr>
-      <tr><td><code>Age</code></td><td>Date of birth up to race day</td></tr>
+      <tr><th>Feature</th><th>How it is known before the race</th></tr>
+      <tr><td><code>Age</code></td><td>Computed from date of birth and race day</td></tr>
       <tr><td><code>Driver_Experience</code></td><td>Number of races the driver started before this one (<code>row_number() - 1</code> per driver, ordered by season)</td></tr>
       <tr><td><code>Driver_Podium</code></td><td>Podiums accumulated <b>before</b> this race — <code>lag(cumsum(positionOrder %in% 1:3))</code></td></tr>
       <tr><td><code>Prev_Total_Points</code></td><td>Lagged cumulative points, so the current race is not included</td></tr>
@@ -160,7 +160,7 @@
       <li><b>Cluster:</b> <code>daisy(..., metric = "gower")</code> → <code>hclust(..., method = "complete")</code>. The number of groups is chosen with cluster-validity indices, including average silhouette width. The report uses <b>5 clusters</b> for 128 circuits.</li>
       <li><b>Join back:</b> the cluster label becomes a feature in the per-race modelling table.</li>
     </ol>
-    <p class="last">The purpose is to give the model a meaningful description of a circuit instead of a circuit identifier, and to make the grouping explainable.</p>
+    <p class="last">The cluster gives the model a description of the circuit instead of an identifier, and the grouping can be explained.</p>
   </div>
 
   <h2>5 · Models <span class="th">ตัวแบบที่ใช้</span></h2>
@@ -181,29 +181,25 @@
   <div class="card">
     <p><b>Split:</b> train on 2019–2023, test on every round of 2024. The split follows race order because the task is forward-looking; a random split would let the model see races that come after the one it predicts and inflate the metrics.</p>
     <p><b>Cross-validation:</b> expanding window over race order, 4 folds. Each fold trains on all earlier races.</p>
-    <p class="last"><b>Reported result:</b> XGBoost had the highest performance on the 2024 test set — ROC-AUC 0.883, accuracy 0.810, precision 0.775, recall 0.875, F1-score 0.822. SHAP places the starting grid position first, followed by the potential and past performance of the team and the driver; circuit type and weather have low influence.</p>
+    <p class="last"><b>Result:</b> XGBoost had the highest performance on the 2024 test set (figures above). SHAP places the starting grid position first, followed by the potential and past performance of the team and the driver; circuit type and weather have low influence.</p>
   </div>
 
   <h2>7 · Limitations <span class="th">ข้อจำกัดของงาน</span></h2>
   <div class="card">
     <ol class="steps">
-      <li><b>Sample size:</b> 2,559 race entries over six seasons. More seasons would give the model more history to learn from.</li>
-      <li><b>Pre-race information only:</b> in-race strategy, tyre choices during the race and live simulation are out of scope by design.</li>
+      <li><b>Sample size:</b> 2,559 race entries over six seasons.</li>
+      <li><b>Pre-race information only:</b> in-race strategy, tyre choice during the race and live simulation are out of scope by design.</li>
       <li><b>Choice of k:</b> the report uses 5 clusters, while parts of the exploration code cut the tree at 3; the report's choice rests on cluster-validity indices.</li>
-      <li><b>Test horizon:</b> the test set is the 2024 season only. The model has not been validated on a later season, and a single race can contain situations the features do not describe.</li>
+      <li><b>Test horizon:</b> the test set is the 2024 season only; the model has not been validated on a later season.</li>
     </ol>
   </div>
 
-  <h2>8 · Files <span class="th">ไฟล์ในโปรเจกต์</span></h2>
+  <h2>8 · Reports and awards <span class="th">รายงานและรางวัล</span></h2>
   <div class="card">
     <table>
       <tr><th>File</th><th>What it is</th></tr>
       <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">report/Full-Report-F1-Driver-Points-Prediction-TH.pdf</a></td><td>Full project report (Thai) — source of the five metrics and the 5-cluster result</td></tr>
       <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">report/F1-Graduate-Poster.pdf</a></td><td>Project poster (EN/TH)</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_data-prep-and-modeling.Rmd</a></td><td>Feature pipeline, clustering and Random Forest demo</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/02_modeling-v1.R">code/02_modeling-v1.R</a></td><td>RF and XGBoost comparison with time-series CV</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/03_modeling-v2-quota-and-strict.R">code/03_modeling-v2-quota-and-strict.R</a></td><td>Quota assignment, tuned hyperparameters and SHAP</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/build_weather_circuit.R">code/build_weather_circuit.R</a></td><td>Rebuilds the weather table from Open-Meteo</td></tr>
       <tr><td><a href="assets/poster-1st-place-certificate.webp">assets/poster-1st-place-certificate.webp</a></td><td>Certificate for the first-place poster award</td></tr>
     </table>
   </div>

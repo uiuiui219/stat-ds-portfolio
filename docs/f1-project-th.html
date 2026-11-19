@@ -132,7 +132,7 @@
   <div class="card">
     <p>ตัวแปรแบ่งเป็น 6 กลุ่ม ได้แก่ ข้อมูลพื้นฐานของนักขับและทีม ประสบการณ์และผลการแข่งขัน ข้อมูลการแข่ง สภาพอากาศและบริบทการแข่ง ลักษณะทางกายภาพของสนาม และลักษณะทางเทคนิคของสนาม</p>
     <table>
-      <tr><th>ตัวแปร</th><th>ข้อมูลนี้มีอยู่ก่อนการแข่งเพราะอะไร</th></tr>
+      <tr><th>ตัวแปร</th><th>ข้อมูลนี้รู้ได้ก่อนการแข่งอย่างไร</th></tr>
       <tr><td><code>Age</code></td><td>อายุจากวันเกิดถึงวันแข่ง</td></tr>
       <tr><td><code>Driver_Experience</code></td><td>จำนวนเรซที่นักขับลงแข่งก่อนเรซนี้ (<code>row_number() - 1</code> ต่อนักขับ เรียงตามฤดูกาล)</td></tr>
       <tr><td><code>Driver_Podium</code></td><td>จำนวนโพเดียมสะสม <b>ก่อน</b> เรซนี้ — <code>lag(cumsum(positionOrder %in% 1:3))</code></td></tr>
@@ -160,7 +160,7 @@
       <li><b>จัดกลุ่ม:</b> <code>daisy(..., metric = "gower")</code> → <code>hclust(..., method = "complete")</code> และเลือกจำนวนกลุ่มด้วยดัชนีคุณภาพการแบ่งกลุ่ม ซึ่งรวมค่า average silhouette width รายงานฉบับจบได้ <b>5 กลุ่ม</b> จาก 128 สนาม</li>
       <li><b>เชื่อมกลับ:</b> หมายเลขกลุ่มถูก join กลับเข้าเป็นตัวแปรหนึ่งของตารางรายเรซ</li>
     </ol>
-    <p class="last">เป้าหมายคือให้โมเดลได้รับคำอธิบายของสนามที่มีความหมาย แทนการใช้รหัสสนามตรง ๆ และอธิบายได้ว่าสนามที่อยู่กลุ่มเดียวกันเหมือนกันเพราะอะไร</p>
+    <p class="last">การจัดกลุ่มทำให้โมเดลได้คำอธิบายของสนามแทนรหัสสนาม และอธิบายได้ว่าสนามในกลุ่มเดียวกันเหมือนกันเพราะอะไร</p>
   </div>
 
   <h2>5 · ตัวแบบ <span class="en">Models</span></h2>
@@ -181,29 +181,25 @@
   <div class="card">
     <p><b>การแบ่งข้อมูล:</b> ฝึกด้วยปี 2019–2023 และทดสอบกับทุกรอบของฤดูกาล 2024 การแบ่งเป็นไปตามลำดับเวลาเพราะเป็นงานพยากรณ์ไปข้างหน้า หากสุ่มแบ่ง โมเดลจะเห็นเรซที่เกิดหลังเรซที่กำลังทำนาย ทำให้ค่าที่วัดได้สูงเกินจริง</p>
     <p><b>Cross-validation:</b> แบบ expanding window ตามลำดับเรซ จำนวน 4 fold โดยแต่ละ fold ใช้ข้อมูลเรซก่อนหน้าทั้งหมดในการฝึก</p>
-    <p class="last"><b>ผลที่รายงาน:</b> XGBoost ให้ผลดีที่สุดบนชุดทดสอบฤดูกาล 2024 — ROC-AUC 0.883, accuracy 0.810, precision 0.775, recall 0.875 และ F1-score 0.822 ผลของ SHAP จัดให้ตำแหน่งออกสตาร์ทมีอิทธิพลสูงสุด ตามด้วยศักยภาพและผลงานย้อนหลังของทีมและนักขับ ส่วนประเภทสนามและสภาพอากาศมีอิทธิพลต่ำ</p>
+    <p class="last"><b>ผลที่รายงาน:</b> XGBoost ให้ผลดีที่สุดบนชุดทดสอบฤดูกาล 2024 (ตัวเลขตามที่แสดงด้านบน) ผลของ SHAP จัดให้ตำแหน่งออกสตาร์ทมีอิทธิพลสูงสุด ตามด้วยศักยภาพและผลงานย้อนหลังของทีมและนักขับ ส่วนประเภทสนามและสภาพอากาศมีอิทธิพลต่ำ</p>
   </div>
 
   <h2>7 · ข้อจำกัด <span class="en">Limitations</span></h2>
   <div class="card">
     <ol class="steps">
-      <li><b>ขนาดข้อมูล:</b> 2,559 race entries จาก 6 ฤดูกาล การเพิ่มจำนวนฤดูกาลจะทำให้โมเดลมีข้อมูลให้เรียนมากขึ้น</li>
+      <li><b>ขนาดข้อมูล:</b> 2,559 race entries จาก 6 ฤดูกาล</li>
       <li><b>ใช้เฉพาะข้อมูลก่อนแข่ง:</b> กลยุทธ์ระหว่างการแข่ง การเลือกยางระหว่างเรซ และการจำลองสถานการณ์สดอยู่นอกขอบเขตของงานนี้โดยตั้งใจ</li>
       <li><b>การเลือกจำนวนกลุ่ม:</b> รายงานใช้ 5 กลุ่ม ขณะที่โค้ดสำรวจบางส่วนตัดที่ 3 กลุ่ม การเลือกของรายงานอ้างอิงดัชนีคุณภาพการแบ่งกลุ่ม</li>
-      <li><b>ขอบเขตการทดสอบ:</b> ชุดทดสอบมีเฉพาะฤดูกาล 2024 ยังไม่มีการทดสอบกับฤดูกาลถัดไป และการแข่งบางเรซมีสถานการณ์ที่ตัวแปรในโมเดลอธิบายไม่ได้</li>
+      <li><b>ขอบเขตการทดสอบ:</b> ชุดทดสอบมีเฉพาะฤดูกาล 2024 ยังไม่มีการทดสอบกับฤดูกาลถัดไป</li>
     </ol>
   </div>
 
-  <h2>8 · ไฟล์ในโปรเจกต์ <span class="en">Files</span></h2>
+  <h2>8 · รายงานและรางวัล <span class="en">Reports and awards</span></h2>
   <div class="card">
     <table>
       <tr><th>ไฟล์</th><th>คืออะไร</th></tr>
       <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">report/Full-Report-F1-Driver-Points-Prediction-TH.pdf</a></td><td>รายงานฉบับเต็ม (ภาษาไทย) — แหล่งที่มาของตัวเลข 5 ค่าและผลการจัดกลุ่ม 5 กลุ่ม</td></tr>
       <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">report/F1-Graduate-Poster.pdf</a></td><td>โปสเตอร์นำเสนอ (อังกฤษ/ไทย)</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_data-prep-and-modeling.Rmd</a></td><td>สร้างตัวแปร จัดกลุ่มสนาม และตัวอย่าง Random Forest</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/02_modeling-v1.R">code/02_modeling-v1.R</a></td><td>เปรียบเทียบ Random Forest กับ XGBoost ด้วย cross-validation ตามลำดับเวลา</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/03_modeling-v2-quota-and-strict.R">code/03_modeling-v2-quota-and-strict.R</a></td><td>การจัดโควตา ไฮเปอร์พารามิเตอร์ที่ปรับแล้ว และ SHAP</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/build_weather_circuit.R">code/build_weather_circuit.R</a></td><td>สร้างตารางสภาพอากาศขึ้นใหม่จาก Open-Meteo</td></tr>
       <tr><td><a href="assets/poster-1st-place-certificate.webp">assets/poster-1st-place-certificate.webp</a></td><td>ประกาศนียบัตรรางวัลที่ 1 จากการนำเสนอโปสเตอร์</td></tr>
     </table>
   </div>
