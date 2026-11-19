@@ -1,5 +1,5 @@
 ---
-title: "Final Prject"
+title: "Texas Road-Accident Severity"
 author: "ณภัทร เกียรติกอบลาภ, ธนวินท์ แสงวิสุทธิ์, ปิยพัทธ์ จันทร์ทวี"
 date: "2025-11-28"
 output: html_document

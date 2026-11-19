@@ -1,6 +1,6 @@
 ---
-title: "Final Project"
-author: "2414, 2417, 2421"
+title: "Analyzing Factors Influencing Formula 1 Driver Scores Using Machine Learning"
+author: "Thanawin Sangvisut, Piyapat Jantawee, Sirasak Klangsomboon"
 date: "2026-03-26"
 output: html_document
 ---

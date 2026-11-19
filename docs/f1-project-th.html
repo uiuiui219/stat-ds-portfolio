@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>โปรเจคจบ F1 Driver Points Prediction — ฉบับภาษาไทย</title>
-<meta name="description" content="หน้ารายละเอียดโปรเจกต์จบ F1 Driver Points Prediction ฉบับภาษาไทย: โจทย์ ข้อมูล ฟีเจอร์ leakage คลัสเตอร์สนาม โมเดล การวัดผล และข้อจำกัด">
+<title>การวิเคราะห์ปัจจัยที่ส่งผลต่อการได้คะแนนนักขับฟอร์มูล่าวัน ด้วยเทคนิคการเรียนรู้ของเครื่อง — รายละเอียดโปรเจกต์</title>
+<meta name="description" content="รายละเอียดโปรเจกต์จบ: โจทย์ ข้อมูล ตัวแปรและการป้องกัน data leakage การจัดกลุ่มสนาม ตัวแบบ การวัดผล และข้อจำกัด">
 <style>
   :root{
     --bg:#f7f8fa; --card:#ffffff; --ink:#1a2233; --muted:#5b6472;
@@ -13,11 +13,11 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font:16px/1.6 -apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
+    font:16px/1.7 -apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
   .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
   header{background:#101828;color:#fff;padding:52px 0 0}
-  header h1{margin:0 0 6px;font-size:1.9rem;letter-spacing:-.01em}
-  header .th{color:#aeb8cc;font-size:.95rem;margin:0 0 18px}
+  header h1{margin:0 0 6px;font-size:1.55rem;line-height:1.45;letter-spacing:-.01em}
+  header .en{color:#aeb8cc;font-size:.92rem;margin:0 0 18px}
   header .meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#cfd6e4;font-size:.9rem;padding-bottom:22px}
   header a{color:#8ab4ff}
   nav.tabs{background:#101828;border-top:1px solid #1e293b;position:sticky;top:0;z-index:10}
@@ -26,73 +26,69 @@
     font-size:.92rem;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
   nav.tabs a:hover{color:#fff}
   nav.tabs a.active{color:#fff;border-bottom-color:var(--accent)}
-  h2{font-size:1.28rem;margin:46px 0 10px}
-  h2 .th{display:block;font-weight:400;color:var(--muted);font-size:.9rem}
+  h2{font-size:1.25rem;margin:46px 0 10px}
+  h2 .en{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:22px 24px;margin-top:16px}
   .card p{margin:0 0 10px;color:var(--muted);font-size:.95rem}
   .card p.last{margin-bottom:0}
+  .card b{color:var(--ink)}
   .metrics{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
   .metric{background:#f1f7ee;border:1px solid #d7e8cd;border-radius:8px;padding:6px 10px;font-size:.8rem;color:var(--muted)}
   .metric b{display:block;font-size:1.1rem;color:var(--good)}
   table{border-collapse:collapse;width:100%;font-size:.9rem;margin:8px 0}
-  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;color:var(--ink)}
-  th{background:#f2f4f8;font-size:.85rem}
-  td b{color:var(--ink)} td{color:var(--muted)}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;color:var(--muted)}
+  th{background:#f2f4f8;font-size:.85rem;color:var(--ink)}
+  td b{color:var(--ink)}
   code{background:#eef2ff;color:#27429a;border-radius:5px;padding:1px 6px;font-size:.85em}
   a{color:var(--accent)}
   .cert{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
-  .cert img{width:240px;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 18px rgba(16,24,40,.08)}
-  .callout{background:var(--warnbg);border:1px solid var(--warnline);
-    border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.92rem;color:#7c4a03}
-  .callout b{color:#92400e}
-  .callout .th{display:block;color:#a16207;font-size:.86rem;margin-top:6px}
+  .cert img{width:230px;border:1px solid var(--line);border-radius:10px}
   ol.steps{margin:8px 0 0;padding-left:22px;color:var(--muted);font-size:.94rem}
   ol.steps li{margin-bottom:8px}
   ol.steps b{color:var(--ink)}
+  .callout{background:var(--warnbg);border:1px solid var(--warnline);
+    border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.92rem;color:#7c4a03}
+  .callout b{color:#92400e}
   footer{margin:56px 0 40px;color:var(--muted);font-size:.85rem;text-align:center}
   footer a{color:var(--accent)}
-  .note{color:#7b8494;font-size:.85rem}
-  .lang-switch{font-size:.8rem}
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap">
-    <h1>โปรเจคจบ F1 Driver Points Prediction <span style="color:#fbbf24">🏆 รางวัลที่ 1</span></h1>
-    <p class="th">ฉบับภาษาไทย — รายละเอียดทั้งกระบวนการ: โจทย์ → ข้อมูล → ฟีเจอร์ → คลัสเตอร์สนาม → โมเดล → วัดผล → ข้อจำกัด</p>
+    <h1>การวิเคราะห์ปัจจัยที่ส่งผลต่อการได้คะแนนนักขับฟอร์มูล่าวัน ด้วยเทคนิคการเรียนรู้ของเครื่อง</h1>
+    <p class="en">Analyzing Factors Influencing Formula 1 Driver Scores Using Machine Learning</p>
     <div class="meta">
       <span>ปิยพัทธ์ จันทร์ทวี</span>
-      <a href="f1-project.html">English version →</a>
+      <span>โปรเจกต์จบปริญญาตรี</span>
       <a href="index.html">← กลับหน้าพอร์ต</a>
+      <a href="f1-project.html">English →</a>
     </div>
   </div>
 </header>
 
 <nav class="tabs">
   <div class="wrap">
-    <a href="index.html">โปรเจคจบ · Graduate project</a>
-    <a href="f1-project.html">รายละเอียด (EN)</a>
+    <a href="index.html">โปรเจกต์จบ · Graduate project</a>
+    <a href="f1-project.html">Project details (EN)</a>
     <a href="f1-project-th.html" class="active">รายละเอียด (ไทย)</a>
-    <a href="exam-f1.html">ฝึกตอบ · Self-check</a>
-    <a href="exam-f1-th.html">ฝึกตอบ (ไทย) · Self-check TH</a>
-    <a href="course-projects.html">โปรเจครายวิชา · Course projects</a>
+    <a href="course-projects.html">โปรเจกต์รายวิชา · Course projects</a>
   </div>
 </nav>
 
 <main class="wrap">
 
-  <h2>รางวัล &amp; ตัวเลขหลัก <span class="th">รางวัล + ผลการทดสอบตามรายงานฉบับจบ</span></h2>
-
+  <h2>ผลที่รายงานในเล่ม <span class="en">Reported results</span></h2>
   <div class="card">
     <div class="cert">
       <img src="assets/poster-1st-place-certificate.webp"
-           alt="ประกาศนียบัตรรางวัลที่ 1 จากการนำเสนอโปสเตอร์โปรเจกต์ F1 Driver Points Prediction">
+           alt="ประกาศนียบัตรรางวัลที่ 1 จากการนำเสนอโปสเตอร์โปรเจกต์จบ">
       <div>
-        <p style="color:var(--ink);font-weight:600;margin:0 0 8px">🏆 รางวัลที่ 1 — โปสเตอร์นำเสนอโปรเจกต์จบ ป.ตรี</p>
-        <p>โปรเจกต์นี้ได้รางวัลที่ 1 จากการนำเสนอโปสเตอร์ประกอบโปรเจกต์จบ
-          (ดู <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">โปสเตอร์ PDF ฉบับเต็ม</a>)</p>
+        <p style="color:var(--ink);font-weight:600;margin:0 0 8px">รางวัลที่ 1 — การนำเสนอโปสเตอร์โปรเจกต์จบ</p>
+        <p class="last">โปรเจกต์นี้ได้รางวัลที่ 1 จากการนำเสนอโปสเตอร์ประกอบโปรเจกต์จบของภาควิชา
+          (ดู <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">ไฟล์โปสเตอร์</a>)</p>
       </div>
     </div>
     <div class="metrics">
@@ -101,139 +97,121 @@
       <span class="metric">Precision <b>0.775</b></span>
       <span class="metric">Recall <b>0.875</b></span>
       <span class="metric">F1-Score <b>0.822</b></span>
-      <span class="metric">Test set <b>ฤดูกาล 2024</b></span>
+      <span class="metric">ชุดทดสอบ <b>ฤดูกาล 2024</b></span>
     </div>
-    <p class="last note">ตัวเลขด้านบนคือของ XGBoost ตาม <b>รายงานฉบับจบ (PDF ภาษาไทย)</b> —
-      ดู <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">projects/f1-driver-points-prediction/report/</a>
-      สคริปต์ R ใน repo (<code>02_modeling-v1.R</code>, <code>03_modeling-v2-quota-and-strict.R</code>) เป็นโค้ดที่ใช้รันก่อนหน้านั้น เมตริกถูกคำนวณต่อรอบแข่ง (accuracy, F1 macro/weighted, precision/recall macro)</p>
+    <p class="last">ตัวเลขทั้งหมดเป็นผลของ XGBoost บนชุดทดสอบฤดูกาล 2024 ตามที่รายงานไว้ใน
+      <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">รายงานฉบับเต็ม (PDF ภาษาไทย)</a></p>
   </div>
 
-  <h2>1 · โจทย์ <span class="th">ทำนายอะไร หน่วยวิเคราะห์คืออะไร ใครใช้เพื่ออะไร</span></h2>
+  <h2>1 · โจทย์และวัตถุประสงค์ <span class="en">Research question</span></h2>
   <div class="card">
-    <p><b>เป้าหมาย:</b> ทำนายว่านักขับหนึ่งคนในหนึ่งเรซจะจบอยู่กลุ่มใด —
-      <b>podium</b> (อันดับ 1–3) / <b>scoring</b> (4–10 ซึ่งได้คะแนน) / <b>no_point</b> (อันดับ 11 ขึ้นไป)
-      และมุมมอง binary <b>“เข้า Top-10 หรือไม่”</b> เทียบเท่าได้</p>
-    <p><b>หน่วยวิเคราะห์:</b> หนึ่งแถว = ผลของนักขับหนึ่งคนในหนึ่งเรซ (race entry) — ปี 2019–2024 รวม <b>2,559 race entries</b></p>
-    <p><b>ใครใช้เพื่ออะไร:</b> สร้างภาพความน่าจะเป็น "ก่อนสุดสัปดาห์แข่ง" จากข้อมูลที่มีก่อนแข่งเท่านั้น (ประวัตินักขับ/ทีม, ตำแหน่ง grid, ลักษณะสนาม, อากาศ) —
-      เพิ่มอีกมุมคือ <b>assignment ตามโควตา</b>: ทำนายทั้งเรซแล้วจัดกลุ่มตามข้อจำกัดจริงของ F1 ที่ podium มีแค่ 3 ที่ + scoring อีก 7 ที่ (รวม 10 ที่ได้คะแนน)</p>
-    <p class="last note">ไฟล์ที่อ้างอิง: <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_data-prep-and-modeling.Rmd</a> (ตัวแปร <code>score_group</code>)</p>
+    <p><b>โจทย์:</b> จำแนกแบบสองกลุ่ม (binary classification) ว่านักขับคนหนึ่งจะได้คะแนนในเรซนั้นหรือไม่ — คะแนนในการแข่งขันฟอร์มูล่าวันมอบให้ผู้จบอันดับ 1 ถึง 10</p>
+    <p><b>หน่วยวิเคราะห์:</b> หนึ่งแถวคือผลของนักขับหนึ่งคนในหนึ่งเรซ (race entry) ตั้งแต่ปี 2019 ถึง 2024 รวม <b>2,559 race entries</b></p>
+    <p><b>วัตถุประสงค์:</b> (1) จำแนกและจัดกลุ่มสนามแข่งขันตามลักษณะเฉพาะของสนาม (2) เปรียบเทียบประสิทธิภาพของตัวแบบการพยากรณ์การได้คะแนนของนักขับในแต่ละรอบการแข่งขัน และ (3) วิเคราะห์และอธิบายความสำคัญของปัจจัยที่ส่งผลต่อการได้คะแนนของนักขับ</p>
+    <p class="last"><b>ข้อมูลนำเข้า:</b> เฉพาะข้อมูลที่มีก่อนการแข่งขัน ได้แก่ ประวัตินักขับและทีม ตำแหน่งออกสตาร์ท ลักษณะของสนาม และสภาพอากาศวันแข่ง</p>
   </div>
 
-  <h2>2 · ข้อมูล <span class="th">แหล่ง 4 แหล่ง · ขนาด · วิธีเชื่อมอากาศเข้ากับเรซ</span></h2>
+  <h2>2 · ข้อมูล <span class="en">Data</span></h2>
   <div class="card">
     <table>
-      <tr><th>แหล่งข้อมูล</th><th>ใช้ทำอะไร</th></tr>
+      <tr><th>แหล่งข้อมูล</th><th>ให้ข้อมูลอะไร</th></tr>
       <tr><td><a href="https://ergast.com/mrd/">Ergast F1 API</a></td>
-          <td>ผลแข่ง, ตำแหน่ง grid, pit stop, lap times, standings, status (DNF หรือไม่) — เก็บเป็น zip ใน repo ที่ <code>data/ergast-f1-data.zip</code></td></tr>
+          <td>ผลการแข่งขัน ตำแหน่งออกสตาร์ท พิตสต็อป เวลาต่อรอบ คะแนนสะสม และสถานะการจบการแข่งขัน — เก็บเป็นไฟล์บีบอัดที่ <code>data/ergast-f1-data.zip</code></td></tr>
       <tr><td><a href="https://open-meteo.com/">Open-Meteo</a></td>
-          <td>อุณหภูมิ / ฝน / ลม รายชั่วโมง (UTC) รายสนาม — ดึงแบบหน้าต่าง ±3 วันรอบเรซ เก็บไฟล์ตัวอย่างไว้บางเรซ และมีสคริปต์ rebuild ครบทุกเรซ</td></tr>
+          <td>อุณหภูมิ ปริมาณฝน และลมรายชั่วโมงของแต่ละสนาม ดึงย้อนหลังในหน้าต่าง ±3 วันรอบเวลาแข่ง ไฟล์ตัวอย่างบางเรซถูกเก็บไว้ในรีโป และมีสคริปต์สร้างตารางเต็มขึ้นใหม่ได้</td></tr>
       <tr><td>Pirelli Motorsport</td>
-          <td>ลักษณะสนามเชิงวิศวฯ: tyre stress, lateral load, grip, downforce, ความยาวสนาม, จำนวนโค้ง — กรองเหลือ 129 สนาม–เรซ (แล้วตัด 1 ที่ข้อมูลหาย) เหลือ <b>128 สนาม</b> สำหรับ clustering</td></tr>
-      <tr><td>Race schedule</td><td>รอบแข่ง + เวลาแข่ง (ใช้คำนวณหน้าต่างเวลาแข่ง)</td></tr>
+          <td>ลักษณะเฉพาะของสนาม เช่น tyre stress, lateral load, grip, downforce ความยาวสนาม และจำนวนโค้ง หลังกรองเหลือ <b>128 สนาม</b> ที่ใช้ในการจัดกลุ่ม</td></tr>
+      <tr><td>ตารางเวลาแข่ง</td>
+          <td>วันและเวลาของการแข่ง ใช้จัดหน้าต่างเวลาให้ตรงกับสภาพอากาศ</td></tr>
     </table>
-    <p><b>วิธีเชื่อมอากาศเข้ากับเรซ:</b> ระยะเวลา "แข่งจริง" ของแต่ละเรซคำนวณจาก total milliseconds ที่คนจบอันดับหนึ่งวิ่ง (จาก lap_times) นับถึงเวลาเริ่มแข่ง (วันแข่ง + เวลาท้องถิ่น) — จากนั้นหาค่าเฉลี่ยอากาศในหน้าต่างเวลาแข่งจริง — ไม่ได้ใช้ค่าเฉลี่ยทั้งวัน</p>
-    <p class="last note">Raw ตัวใหญ่ไม่ได้ commit — <code>README.md</code> ของโปรเจกต์ระบุแหล่งดาวน์โหลด + วิธี regenerate ด้วย <code>code/build_weather_circuit.R</code> (สคริปต์เรียก network ราว 3 นาที) (โค้ดหลักใช้ปี 2024 รอบเดียวในโหมด demo)</p>
+    <p><b>การเชื่อมข้อมูลอากาศ:</b> หน้าต่างเวลาที่ใช้คือระยะเวลาการแข่งขันจริง ซึ่งคำนวณจากเวลารวมของนักขับที่ชนะ (จากไฟล์ <code>lap_times</code>) นับจากเวลาเริ่มแข่ง แล้วหาค่าเฉลี่ยสภาพอากาศในช่วงนั้น ไม่ได้ใช้ค่าเฉลี่ยของทั้งวัน</p>
+    <p class="last">ข้อมูลดิบขนาดใหญ่ไม่ได้ commit ลงรีโป README ของโปรเจกต์ระบุแหล่งดาวน์โหลด และ <code>code/build_weather_circuit.R</code> สร้างตารางอากาศขึ้นใหม่ได้ (ใช้เวลาประมาณ 3 นาทีและต้องต่อเครือข่าย)</p>
   </div>
 
-  <h2>3 · ฟีเจอร์ + data-leakage <span class="th">สร้างตัวแปรอะไร ข้อมูลต้องเกิด "ก่อนแข่ง" เท่านั้น</span></h2>
+  <h2>3 · ตัวแปรและการป้องกัน data leakage <span class="en">Features</span></h2>
   <div class="card">
+    <p>ตัวแปรแบ่งเป็น 6 กลุ่ม ได้แก่ ข้อมูลพื้นฐานของนักขับและทีม ประสบการณ์และผลการแข่งขัน ข้อมูลการแข่ง สภาพอากาศและบริบทการแข่ง ลักษณะทางกายภาพของสนาม และลักษณะทางเทคนิคของสนาม</p>
     <table>
-      <tr><th>ฟีเจอร์</th><th>ตรรกะ — ข้อมูลนี้มี "ก่อนแข่ง" ตั้งแต่เมื่อไหร่?</th></tr>
+      <tr><th>ตัวแปร</th><th>ข้อมูลนี้มีอยู่ก่อนการแข่งเพราะอะไร</th></tr>
       <tr><td><code>Age</code></td><td>อายุจากวันเกิดถึงวันแข่ง</td></tr>
-      <tr><td><code>Driver_Experience</code></td>
-          <td>จำนวนเรซที่นักขับแข่งมาก่อนหน้าเรซนี้ (row_number − 1 ต่อ driver, เรียงตามปี)</td></tr>
-      <tr><td><code>Driver_Podium</code></td>
-          <td>จำนวน podium สะสม <b>ก่อนหน้าของเรซนี้</b> — <code>lag(cumsum(positionOrder in 1:3))</code></td></tr>
-      <tr><td><code>Prev_Total_Points</code></td>
-          <td>คะแนนสะสมก่อนหน้า (lag cumsum คะแนน — นับเฉพาะเรซก่อนหน้า)</td></tr>
-      <tr><td><code>Constructor_Wins</code></td>
-          <td>จำนวนชัยชนะสะสมของทีม ก่อนเรซนี้</td></tr>
-      <tr><td><code>Constructor_DNF_Score</code></td>
-          <td>จำนวน DNF สะสมของทีม ในข้อมูลก่อนเรซนี้</td></tr>
-      <tr><td><code>avg_temperature</code> / <code>avg_rain</code> / <code>avg_wind_speed</code></td>
-          <td>ค่าเฉลี่ยอากาศในหน้าต่างเวลาแข่งจริงของเรซนั้น</td></tr>
-      <tr><td><code>cluster</code></td><td>หมายเลขกลุ่มของสนาม ที่ได้จากการ clustering (หัวข้อ 4)</td></tr>
-      <tr><td><code>grid</code></td><td>ตำแหน่งออกตัว — ใช้ใน pipeline หลัก (<code>final_table_with_cluster.csv</code> ใน <code>data/</code> มีคอลัมน์ grid) — ใน Rmd 01 โหมด demo ตัด <code>grid</code> ทิ้ง แต่ในไฟล์ v1/v2 ใช้ <b>มี</b> <code>grid</code> อยู่ เจาะจงต้องตอบเอง</td></tr>
+      <tr><td><code>Driver_Experience</code></td><td>จำนวนเรซที่นักขับลงแข่งก่อนเรซนี้ (<code>row_number() - 1</code> ต่อนักขับ เรียงตามฤดูกาล)</td></tr>
+      <tr><td><code>Driver_Podium</code></td><td>จำนวนโพเดียมสะสม <b>ก่อน</b> เรซนี้ — <code>lag(cumsum(positionOrder %in% 1:3))</code></td></tr>
+      <tr><td><code>Prev_Total_Points</code></td><td>คะแนนสะสมก่อนหน้า โดยเลื่อนค่าถอยหลังหนึ่งเรซ (lag) เพื่อไม่ให้ผลของเรซปัจจุบันปนเข้ามา</td></tr>
+      <tr><td><code>Constructor_Wins</code></td><td>จำนวนชัยชนะสะสมของทีมก่อนเรซนี้</td></tr>
+      <tr><td><code>Constructor_DNF_Score</code></td><td>จำนวนการไม่จบการแข่งขัน (DNF) สะสมของทีมก่อนเรซนี้</td></tr>
+      <tr><td><code>avg_temperature</code>, <code>avg_rain</code>, <code>avg_wind_speed</code></td><td>ค่าเฉลี่ยสภาพอากาศในช่วงเวลาแข่ง</td></tr>
+      <tr><td><code>cluster</code></td><td>หมายเลขกลุ่มของสนามจากขั้นตอนการจัดกลุ่ม</td></tr>
+      <tr><td><code>grid</code></td><td>ตำแหน่งออกสตาร์ท ซึ่งทราบหลังรอบคัดเลือกและก่อนการแข่ง มีอยู่ใน <code>data/final_table_with_cluster.csv</code> และในสคริปต์ v1 / v2 ส่วนตัวอย่าง Random Forest ใน Rmd ตัดตัวแปรนี้ออก</td></tr>
     </table>
     <div class="callout">
-      <b>❗ จุดที่ interviewer มักพุ่ง (data-leakage ธรรมชาติ) — ต้องตอบให้ชัด:</b>
-      <br>1) ประวัติ cumsum ต้อง lag ก่อนเรซปัจจุบัน <b>เสมอ</b> เพื่อไม่ให้ค่าของเรซนี้รั่วเข้าไป
-      <br>2) ตัวแปรประเมินประสิทธิภาพ (เช่น Overtake_Rate) ต้องคิดเฉพาะเรซก่อนหน้า เพราะเป็นข้อมูลที่มีหลังแข่ง — ไม่ใช่ก่อนเรซปัจจุบัน
-      <br>3) <code>DNF_flag</code> ใช้ข้อมูล <b>status</b> (ผลหลังแข่ง) ผ่าน <code>is_finished</code> — ใช้ได้เพราะถูกใช้เป็นข้อมูล "ภายหลังของเรซก่อนหน้า" ตาม lag
-      <br><span class="th">ต้องตอบเองละเอียดใน <a href="exam-f1-th.html">exam-f1-th.html (เวอร์ชันไทย)</a> หรือ <a href="exam-f1.html#B2-B4">exam-f1.html หมวด B</a> — อ่านโค้ดจริงได้ที่ <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_…Rmd</a></span>
+      <b>หลักการป้องกัน leakage ที่ใช้ในโค้ด</b><br>
+      ตัวแปรสะสมทั้งหมดถูกเลื่อนถอยหลัง (lag) ก่อนเรซปัจจุบัน เพื่อไม่ให้เรซที่กำลังทำนายส่งผลต่อตัวพยากรณ์ของตัวเอง
+      ตัวแปรอัตราที่คำนวณจากการแข่ง เช่น <code>Overtake_Rate</code> ใช้เฉพาะเรซก่อนหน้า
+      <code>DNF_flag</code> สร้างจากสถานะการจบการแข่งขันของเรซก่อนหน้า ซึ่งเป็นข้อมูลหลังแข่งแต่เกิดก่อนเรซที่กำลังทำนาย
     </div>
   </div>
 
-  <h2>4 · คลัสเตอร์สนาม <span class="th">clustering แบบ unsupervised — 128 สนาม</span></h2>
+  <h2>4 · การจัดกลุ่มสนามแข่งขัน <span class="en">Circuit clustering</span></h2>
   <div class="card">
     <ol class="steps">
-      <li><b>เก็บสนามต่อ (circuit, ปี, รอบ):</b> รวมตัวแปร Pirelli (จำนวนโค้ง, ระยะ, ความยาว, tyre stress, lateral, downforce, asphalt grip, asphalt abrasion) <b>เพิ่ม</b> ตัวแปร "การแข่งจริง" ที่คำนวณจาก <i>Ergast</i>: <code>Overtake_Rate</code>, <code>Race_DNF_Rate</code></li>
-      <li><b>ประเมินความเหมาะสม:</b> KMO / correlation ระหว่างตัวแปร เช่น <code>KMO(cor(clus_dat))</code>; พิจารณาเหตุผลเชิงมิติของตัวแปรแต่ละชุด</li>
-      <li><b>ลดมิติข้อมูล: PCA</b> — เลือก 5 องค์ประกอบ (พิจารณาที่ cumsum ของ explained variance เพียงพอ)</li>
-      <li><b>Clustering:</b> <code>daisy(..., metric = "gower")</code> → <code>hclust(..., method = "complete")</code> → เลือกจำนวนกลุ่ม
-        ด้วยดัชนีคุณภาพการแบ่งกลุ่ม จาก <code>plot_idx(Hvalid(...))</code> (ครอบคลุม silhouette และดัชนีอื่น) พร้อมอธิบายเหตุผลที่เลือกจำนวนกลุ่ม
-        <br><span class="note">สิ่งที่ต้องตอบให้เจาะจง: รายงานจบใช้ <b>5 กลุ่ม</b> แต่โค้ดตัวอย่างบางส่วน (<code>cutree(hc_com, 3)</code>) ใช้ 3 — ต้องอธิบายได้ว่าเลือกจากดัชนีคุณภาพการแบ่งกลุ่มอย่างไร เหตุผลเจาะจง ไม่ใช่เลือกลอยๆ</span></li>
-      <li><b>เก็บทำใช้ต่อ:</b> ตัวแปร <code>cluster</code> จากกลุ่มถูกสร้างแล้ว join กลับเข้าตารางรายเรซ (ให้เป็น feature ของโมเดล)</li>
+      <li><b>สร้างตารางรายสนาม:</b> ตัวแปรจาก Pirelli (จำนวนโค้ง ระยะทาง ความยาว tyre stress, lateral load, downforce, asphalt grip และ abrasion) รวมกับอัตราที่คำนวณจากการแข่งจริงจาก Ergast (<code>Overtake_Rate</code>, <code>Race_DNF_Rate</code>)</li>
+      <li><b>ตรวจความเหมาะสม:</b> ค่า KMO และโครงสร้างสหสัมพันธ์ระหว่างตัวแปร</li>
+      <li><b>ลดมิติ:</b> ใช้ PCA โดยเลือกจำนวนองค์ประกอบจากสัดส่วนความแปรปรวนสะสม</li>
+      <li><b>จัดกลุ่ม:</b> <code>daisy(..., metric = "gower")</code> → <code>hclust(..., method = "complete")</code> และเลือกจำนวนกลุ่มด้วยดัชนีคุณภาพการแบ่งกลุ่ม ซึ่งรวมค่า average silhouette width รายงานฉบับจบได้ <b>5 กลุ่ม</b> จาก 128 สนาม</li>
+      <li><b>เชื่อมกลับ:</b> หมายเลขกลุ่มถูก join กลับเข้าเป็นตัวแปรหนึ่งของตารางรายเรซ</li>
     </ol>
-    <p class="last note">เป้าหมายการ cluster = ทำให้ "สนาม" เป็นตัวแปรที่มีสาระเข้าโมเดล แทนที่จะใช้ id สนามแบบตรงๆ (จัดได้ว่าสนามไหนอยู่กลุ่มเดียวกัน จนอธิบายได้ว่าเหมือนกันเพราะอะไร)</p>
+    <p class="last">เป้าหมายคือให้โมเดลได้รับคำอธิบายของสนามที่มีความหมาย แทนการใช้รหัสสนามตรง ๆ และอธิบายได้ว่าสนามที่อยู่กลุ่มเดียวกันเหมือนกันเพราะอะไร</p>
   </div>
 
-  <h2>5 · โมเดล + การตีความผล <span class="th">RF + XGBoost + แปลงผลเป็นโควตา</span></h2>
+  <h2>5 · ตัวแบบ <span class="en">Models</span></h2>
   <div class="card">
     <table>
       <tr><th>ไฟล์</th><th>ทำอะไร</th></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_…Rmd</a></td>
-          <td>รวม feature ทั้งหมด → RF demo (ntree=1000, mtry=5) → ทำนาย 1 เรซแล้วแปลงเป็น <b>assignment ตามโควตา</b> (3 podium + 7 scoring + 10 no_point)</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_data-prep-and-modeling.Rmd</a></td>
+          <td>สร้างตัวแปรทั้งหมด รัน Random Forest และสาธิตการจับคู่ผลทำนายทั้งสนามเข้ากับโควตาโพเดียม / ได้คะแนน / ไม่ได้คะแนน (3 + 7 + 10)</td></tr>
       <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/02_modeling-v1.R">code/02_modeling-v1.R</a></td>
-          <td><b>v1</b> — ทดสอบ RF + XGBoost โดย <b>Expanding-window CV</b>:
-            train ปี &lt;2024, test ปี 2024 (รอบ 1–20) · เทียบ RF (500 ต้น) กับ XGBoost (multi:softmax, 3 กลุ่ม) ทั้ง 2019–2023 CV + ทดใน 2024 · รายงาน metrics ครบต่อ fold (accuracy, F1 macro/weighted, prec/rec) พร้อม <code>align_matrix</code> ของ xgboost ในช่วงเทียบคอลัมน์</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/03_modeling-v2-quota-and-strict.R">code/03_…strict.R</a></td>
-          <td><b>v2</b> — เพิ่ม <b>nationality bucketing</b> (จับ Nationality ที่มีข้อมูลน้อยไป "Other"), เพิ่ม <b>โหมด strict</b> ของ quota assignment พร้อม <b>train() กับ time-series control</b> + Grid Search ของ hyperparameters และ SHAP/Feature importance ตามโค้ดจริง</td></tr>
+          <td>เปรียบเทียบ Random Forest กับ XGBoost ด้วย cross-validation แบบ expanding window (train ก่อนปี 2024, test ทุกรอบของปี 2024) พร้อมเมตริกราย fold</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/03_modeling-v2-quota-and-strict.R">code/03_modeling-v2-quota-and-strict.R</a></td>
+          <td>เวอร์ชัน 2: รวมสัญชาติที่มีข้อมูลน้อยเป็นกลุ่ม Other เพิ่มโหมด strict ของการจัดโควตา ปรับไฮเปอร์พารามิเตอร์ด้วย grid search และคำนวณ SHAP</td></tr>
     </table>
-    <p class="last note">ทั้งสองไฟล์ v1/v2 ใช้ <code>data/final_table_with_cluster.csv</code> ที่ commit ไว้ โค้ดใช้ xgboost API <code>xgb.train</code> / <code>xgb.DMatrix</code> ที่ทำงานได้กับทั้ง xgboost รุ่น 1.7 และ 3.x — และทั้งคู่จบด้วยการแปลงผลเป็น quota 3+7+10 เสมอ</p>
+    <p class="last">สคริปต์ทั้งสองอ่าน <code>data/final_table_with_cluster.csv</code> จากรีโป และเรียกใช้ <code>xgb.train</code> / <code>xgb.DMatrix</code></p>
   </div>
 
-  <h2>6 · วัดผล <span class="th">โครงสร้าง split + การตีความ CV</span></h2>
+  <h2>6 · การวัดผล <span class="en">Evaluation</span></h2>
   <div class="card">
-    <p><b>Split:</b> train = ชุด 2019–2023 (ปลอด 2024) · test = ทุกการแข่งของปี 2024 (รอบ 1–20) — <b>เรียงตามเวลา</b> เพราะเป็นโจทย์ทำนายไปข้างหน้าในเวลาจริง — ถ้า random split โมเดลจะมีข้อมูลหลังเรซที่ต้องทำนาย ทำให้เมตริกสูงเกินจริง</p>
-    <p><b>CV ประสิทธิภาพ:</b> fold ตามลำดับเรซ แบบ <b>expanding window</b> — fold หลังใช้ข้อมูลเรซก่อนหน้าทั้งหมด</p>
-    <p><b>ผลที่รายงาน (จาก PDF report):</b> XGBoost ชนะ RF ในทุก CV (ROC-AUC ~0.840 vs ~0.820 per fold) จาก report ใช้ test ปี 2024 แล้วได้ตัวเลข 5 เมตริกเหมือนแบบ: <b>ROC-AUC 0.883 · Accuracy 0.810 · Precision 0.775 · Recall 0.875 · F1 0.822</b>; feature สำคัญตาม SHAP — <b>grid position อันดับ 1</b> ตามด้วยประสิทธิภาพทีม/นักขับ</p>
-    <p class="last note">สำหรับ v1 / v2: โค้ด print metrics ต่อ fold + confusion matrix ต่อ fold ทาง PDF รวมผลสุดท้าย แล้วเลือกโมเดลที่ผลดีสุด</p>
+    <p><b>การแบ่งข้อมูล:</b> ฝึกด้วยปี 2019–2023 และทดสอบกับทุกรอบของฤดูกาล 2024 การแบ่งเป็นไปตามลำดับเวลาเพราะเป็นงานพยากรณ์ไปข้างหน้า หากสุ่มแบ่ง โมเดลจะเห็นเรซที่เกิดหลังเรซที่กำลังทำนาย ทำให้ค่าที่วัดได้สูงเกินจริง</p>
+    <p><b>Cross-validation:</b> แบบ expanding window ตามลำดับเรซ จำนวน 4 fold โดยแต่ละ fold ใช้ข้อมูลเรซก่อนหน้าทั้งหมดในการฝึก</p>
+    <p class="last"><b>ผลที่รายงาน:</b> XGBoost ให้ผลดีที่สุดบนชุดทดสอบฤดูกาล 2024 — ROC-AUC 0.883, accuracy 0.810, precision 0.775, recall 0.875 และ F1-score 0.822 ผลของ SHAP จัดให้ตำแหน่งออกสตาร์ทมีอิทธิพลสูงสุด ตามด้วยศักยภาพและผลงานย้อนหลังของทีมและนักขับ ส่วนประเภทสนามและสภาพอากาศมีอิทธิพลต่ำ</p>
   </div>
 
-  <h2>7 · ข้อจำกัดจริง <span class="th">ของจริง ไม่ gloss ไม่เปิดเฉย</span></h2>
+  <h2>7 · ข้อจำกัด <span class="en">Limitations</span></h2>
   <div class="card">
     <ol class="steps">
-      <li><b>คุณภาพตั้งต้นการฝึก:</b> ใช้เฉพาะฟีเจอร์ pre-race ที่เป็นจริงก่อนแข่ง — ข้อมูล (ปี 2019–2024, รวม 2,559 race entries) เป็นจำนวนจำกัด ต้องบอกได้ว่าถ้าทำจริงจะขยายข้อมูลเพิ่มอย่างไร</li>
-      <li><b>ไม่</b> รวมข้อมูล strategy/sim เชิง current — ใช้เฉพาะสิ่งที่มีจริงก่อนแข่ง</li>
-      <li><b>เลือก k ของคลัสเตอร์:</b> รายงานใช้ 5 กลุ่ม โค้ดตัวอย่างอาจได้ 3 — ต้องอธิบายเหตุผลได้ว่าทำไม 5 ไม่ใช่ 3</li>
-      <li><b>ขอบเขต test:</b> test set คือปี 2024 เท่านั้น — ยังไม่ได้ทดสอบทำนายฤดูกาลถัดไปจริง และเรซหนึ่งอาจมีสถานการณ์ปลายเปิดที่โมเดลคาดไม่ถึง</li>
+      <li><b>ขนาดข้อมูล:</b> 2,559 race entries จาก 6 ฤดูกาล การเพิ่มจำนวนฤดูกาลจะทำให้โมเดลมีข้อมูลให้เรียนมากขึ้น</li>
+      <li><b>ใช้เฉพาะข้อมูลก่อนแข่ง:</b> กลยุทธ์ระหว่างการแข่ง การเลือกยางระหว่างเรซ และการจำลองสถานการณ์สดอยู่นอกขอบเขตของงานนี้โดยตั้งใจ</li>
+      <li><b>การเลือกจำนวนกลุ่ม:</b> รายงานใช้ 5 กลุ่ม ขณะที่โค้ดสำรวจบางส่วนตัดที่ 3 กลุ่ม การเลือกของรายงานอ้างอิงดัชนีคุณภาพการแบ่งกลุ่ม</li>
+      <li><b>ขอบเขตการทดสอบ:</b> ชุดทดสอบมีเฉพาะฤดูกาล 2024 ยังไม่มีการทดสอบกับฤดูกาลถัดไป และการแข่งบางเรซมีสถานการณ์ที่ตัวแปรในโมเดลอธิบายไม่ได้</li>
     </ol>
-    <div class="callout">
-      <b>❗ จะตอบ "หน้าตัวจริง" ได้ต้องฝึกผ่านชุดข้อสอบ (เช่น <a href="exam-f1-th.html">exam-f1-th.html</a>):</b> อธิบายได้ว่าคอลัมน์จริงและค่าที่คำนวณต่างจากตาราง demo อย่างไร
-      รวมถึงอธิบายได้ว่าจะจัดโควตา (3 podium + 7 scoring + 10 no_point) อย่างไรเมื่อโอกาสยังไม่ชัดเจน
-      <br><span class="th">อ่านแล้วพิจารณารายละเอียดที่ <a href="exam-f1-th.html">exam-f1-th.html (ไทย)</a> — หน้าจอ 8 หมวด ~28 ข้อ</span>
-    </div>
   </div>
 
-  <h2>8 · ไฟล์ชิ้นงาน <span class="th">แผนที่ทุกไฟล์ของโปรเจกต์</span></h2>
+  <h2>8 · ไฟล์ในโปรเจกต์ <span class="en">Files</span></h2>
   <div class="card">
     <table>
-      <tr><th>ไฟล์ / ลิงก์</th><th>ใช้ทำอะไร</th></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">report/Full-Report-…-TH.pdf</a></td><td>รายงาน full ฉบับจบ (ภาษาไทย) — แหล่งตัวเลข 5 กลุ่ม + AUC 0.883 อันสุดท้าย</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_…Rmd</a> / <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/02_modeling-v1.R">02_modeling-v1.R</a> / <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/03_modeling-v2-quota-and-strict.R">03_modeling-v2-…-strict.R</a></td><td>pipeline + โมเดล RF/XGBoost + tuned + strict quota + SHAP — แหล่งโค้ดจริงที่ต้องยึดเวลาตอบ</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/build_weather_circuit.R">code/build_weather_circuit.R</a></td><td>สร้างข้อมูลอากาศจาก Open-Meteo ใหม่ได้ทั้งซีซัน (ทำซ้ำได้จากแหล่งจริง)</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/dashboard/f1-dashboard.pbix">dashboard/f1-dashboard.pbix</a></td><td>Power BI dashboard สำหรับวาดผลทำนายทั้งเรซ</td></tr>
-      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/raw/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">report/F1-Graduate-Poster.pdf</a></td><td>โปสเตอร์ (EN/TH) — ตรงสำหรับรางวัลที่ 1</td></tr>
-      <tr><td><a href="assets/poster-1st-place-certificate.webp">assets/poster-1st-place-certificate.webp</a></td><td>ประกาศนียบัตรรางวัลที่ 1 (ไฟล์จริง แนบใน docs/assets)</td></tr>
-      <tr><td><a href="exam-f1-th.html">exam-f1-th.html</a></td><td>ชุดข้อสอบ self-check ประเมินระดับความเข้าใจตลอดทั้งงาน — เวอร์ชันอังกฤษ: <a href="exam-f1.html">exam-f1.html</a></td></tr>
+      <tr><th>ไฟล์</th><th>คืออะไร</th></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">report/Full-Report-F1-Driver-Points-Prediction-TH.pdf</a></td><td>รายงานฉบับเต็ม (ภาษาไทย) — แหล่งที่มาของตัวเลข 5 ค่าและผลการจัดกลุ่ม 5 กลุ่ม</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">report/F1-Graduate-Poster.pdf</a></td><td>โปสเตอร์นำเสนอ (อังกฤษ/ไทย)</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/01_data-prep-and-modeling.Rmd">code/01_data-prep-and-modeling.Rmd</a></td><td>สร้างตัวแปร จัดกลุ่มสนาม และตัวอย่าง Random Forest</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/02_modeling-v1.R">code/02_modeling-v1.R</a></td><td>เปรียบเทียบ Random Forest กับ XGBoost ด้วย cross-validation ตามลำดับเวลา</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/03_modeling-v2-quota-and-strict.R">code/03_modeling-v2-quota-and-strict.R</a></td><td>การจัดโควตา ไฮเปอร์พารามิเตอร์ที่ปรับแล้ว และ SHAP</td></tr>
+      <tr><td><a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/code/build_weather_circuit.R">code/build_weather_circuit.R</a></td><td>สร้างตารางสภาพอากาศขึ้นใหม่จาก Open-Meteo</td></tr>
+      <tr><td><a href="assets/poster-1st-place-certificate.webp">assets/poster-1st-place-certificate.webp</a></td><td>ประกาศนียบัตรรางวัลที่ 1 จากการนำเสนอโปสเตอร์</td></tr>
     </table>
   </div>
 
 </main>
 
 <footer>
-  ส่วนหนึ่งของพอร์ตโฟลิโอ Stat &amp; Data Science (KMUTT) · <a href="index.html">← กลับหน้าแรก</a> · <a href="f1-project.html">English version</a> · <a href="https://github.com/uiuiui219/stat-ds-portfolio">GitHub repository</a>
+  ส่วนหนึ่งของพอร์ตโฟลิโอสถิติและวิทยาการข้อมูล (KMUTT) · <a href="index.html">กลับหน้าโปรเจกต์จบ</a>
 </footer>
 
 </body>

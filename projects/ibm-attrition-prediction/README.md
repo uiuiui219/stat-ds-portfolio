@@ -2,7 +2,7 @@
 
 **STD 371 — Statistical Learning for Data Science I (final project)** · Predicting employee attrition and profiling the highest-risk segment.
 
-> **โปรเจกต์รายวิชา STD 371** — ทำนายการลาออกของพนักงาน พร้อมจำแนกกลุ่มพนักงานที่มีความเสี่ยงสูงสุดและวิเคราะห์ปัจจัยที่ส่งผล
+> **โปรเจกต์รายวิชา STD 371** — ทำนายการลาออกของพนักงาน พร้อมจำแนกกลุ่มพนักงานที่มีความเสี่ยงสูงสุดและวิเคราะห์ปัจจัยที่เกี่ยวข้อง
 
 **Team:** ธนวินท์ แสงวิสุทธิ์ · ปิยพัทธ์ จันทร์ทวี
 
@@ -35,7 +35,7 @@ Source: [**IBM HR Analytics Employee Attrition & Performance** on Kaggle](https:
 4. **Modelling** — Random Forest, XGBoost, glmnet and a logistic baseline, each with k-fold cross-validation; **selected on F1-score** because both missing a likely leaver (recall) and falsely flagging a stayer (precision) matter.
 5. **Profiling** — variable importance + cluster-level interpretation of the highest-risk segment.
 
-## Result
+## Results
 
 - **Random Forest achieved the highest F1-score** among the compared models → used for variable-importance analysis.
 - The highest-risk cluster (cluster 2) shows **38.18 % attrition (21 of 55 employees)**; its drivers are low **JobInvolvement** (β ≈ −0.758), low **StockOptionLevel** (β ≈ −0.776) and low **JobSatisfaction** (β ≈ −0.520).

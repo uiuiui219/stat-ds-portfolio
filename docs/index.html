@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Piyapat Jantawee — Graduate Project · โปรเจคจบ ป.ตรี</title>
-<meta name="description" content="Graduate project (F1 Driver Points Prediction) — Statistics and Data Science portfolio, King Mongkut's University of Technology Thonburi (KMUTT)">
+<title>Piyapat Jantawee — Graduate project · โปรเจกต์จบปริญญาตรี</title>
+<meta name="description" content="Graduate project: Analyzing Factors Influencing Formula 1 Driver Scores Using Machine Learning — Statistics and Data Science portfolio, King Mongkut's University of Technology Thonburi (KMUTT)">
 <style>
   :root{
     --bg:#f7f8fa; --card:#ffffff; --ink:#1a2233; --muted:#5b6472;
@@ -21,7 +21,7 @@
   header .meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#cfd6e4;font-size:.92rem;padding-bottom:22px}
   header a{color:#8ab4ff}
   nav.tabs{background:#101828;border-top:1px solid #1e293b;position:sticky;top:0;z-index:10}
-  nav.tabs .wrap{display:flex;gap:4px}
+  nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
   nav.tabs a{display:block;padding:13px 18px;color:#aeb8cc;text-decoration:none;
     font-size:.95rem;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
   nav.tabs a:hover{color:#fff}
@@ -33,6 +33,7 @@
     padding:24px 26px;display:flex;flex-direction:column;gap:12px}
   .card.hero{border:2px solid var(--accent);box-shadow:0 6px 24px rgba(11,95,255,.10)}
   .card h3{margin:0;font-size:1.35rem}
+  .card .title-th{color:var(--muted);font-size:.95rem;margin:0}
   .card .kind{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
   .card p{margin:0;color:var(--muted);font-size:.95rem}
   .card .thline{color:#7b8494;font-size:.88rem}
@@ -70,21 +71,24 @@
 
 <nav class="tabs">
   <div class="wrap">
-    <a href="index.html" class="active">โปรเจคจบ · Graduate project</a>
-    <a href="course-projects.html">โปรเจครายวิชา · Course projects</a>
+    <a href="index.html" class="active">Graduate project · โปรเจกต์จบ</a>
+    <a href="f1-project.html">Project details (EN)</a>
+    <a href="f1-project-th.html">รายละเอียด (ไทย)</a>
+    <a href="course-projects.html">Course projects · โปรเจกต์รายวิชา</a>
   </div>
 </nav>
 
 <main class="wrap">
 
-  <h2>Graduate project <span class="th">โปรเจคจบ ป.ตรี — ผลงานชิ้นเอกของพอร์ตโฟลิโอนี้</span></h2>
+  <h2>Graduate project <span class="th">โปรเจกต์จบปริญญาตรี</span></h2>
 
   <div class="grid">
     <div class="card hero">
-      <span class="kind">Graduate project · โปรเจคจบ ป.ตรี</span>
-      <h3>F1 Driver Points Prediction</h3>
-      <p>Predicting whether a Formula 1 driver finishes in the points (Top 10) from race-weekend features: driver history, grid, circuit clustering and race-day weather — with SHAP-based interpretation of what actually drives a scoring finish.</p>
-      <p class="thline">ทำนายการเข้าเส้นชัยในกลุ่มคะแนนของนักขับ F1 จากผลงานย้อนหลัง ตำแหน่งออกสตาร์ท สภาพอากาศ และการจัดกลุ่มสนาม พร้อมอธิบายโมเดลด้วย SHAP</p>
+      <span class="kind">Graduate project · โปรเจกต์จบปริญญาตรี</span>
+      <h3>Analyzing Factors Influencing Formula 1 Driver Scores Using Machine Learning</h3>
+      <p class="title-th">การวิเคราะห์ปัจจัยที่ส่งผลต่อการได้คะแนนนักขับฟอร์มูล่าวัน ด้วยเทคนิคการเรียนรู้ของเครื่อง</p>
+      <p>A binary classification study of whether a Formula 1 driver scores points in a race, using 2019–2024 race data. The report groups circuits by their characteristics, compares Random Forest and XGBoost, and uses SHAP to explain which factors matter.</p>
+      <p class="thline">งานวิจัยนี้จำแนกว่าผู้นักขับจะได้คะแนนในเรซหรือไม่ โดยจัดกลุ่มสนามแข่งขันตามลักษณะเฉพาะ เปรียบเทียบตัวแบบ Random Forest กับ XGBoost และอธิบายความสำคัญของปัจจัยด้วย SHAP</p>
       <div class="metrics">
         <span class="metric">ROC-AUC<b>0.883</b></span>
         <span class="metric">Accuracy<b>0.810</b></span>
@@ -94,35 +98,50 @@
       <div class="chips">
         <span class="chip">XGBoost</span><span class="chip">Random Forest</span>
         <span class="chip">Gower + Hierarchical Clustering</span><span class="chip">Time-series CV</span>
-        <span class="chip">SHAP</span><span class="chip">Power BI</span><span class="chip">R</span>
+        <span class="chip">SHAP</span><span class="chip">R</span>
       </div>
       <div class="links">
-        <a href="reports/f1-data-prep-and-modeling.html">ดูรายงาน HTML (Rendered report) →</a>
+        <a href="reports/f1-data-prep-and-modeling.html">Rendered report (HTML) →</a>
         <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/F1-Graduate-Poster.pdf">Poster (PDF)</a>
-        <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">Full report (PDF)</a>
-        <a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/projects/f1-driver-points-prediction">Source &amp; data →</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/blob/main/projects/f1-driver-points-prediction/report/Full-Report-F1-Driver-Points-Prediction-TH.pdf">Full report (PDF, Thai)</a>
+        <a href="https://github.com/uiuiui219/stat-ds-portfolio/tree/main/projects/f1-driver-points-prediction">Code &amp; data →</a>
       </div>
     </div>
   </div>
 
-  <h2>How it works <span class="th">ขั้นตอนการทำงาน</span></h2>
+  <h2>Objectives <span class="th">วัตถุประสงค์ของงานวิจัย</span></h2>
   <div class="card">
     <ol class="steps">
-      <li><b>Data &amp; feature engineering</b> — results, grids, pit stops and standings from the Ergast F1 API (2019–2024, 2,559 race entries); race-day temperature/rain/wind from Open-Meteo aligned to local race windows; tyre-stress data from Pirelli track data. Driver age, experience, rolling podium/points history, constructor wins and DNF flags — with an explicit data-leakage review (no post-race information).</li>
-      <li><b>Circuit clustering</b> — 128 circuits → Gower distance → hierarchical clustering → <b>5 clusters</b> chosen by Average Silhouette Width; cluster membership becomes a feature.</li>
-      <li><b>Modelling</b> — Random Forest vs <b>XGBoost</b> with grid-searched hyperparameters, evaluated with time-series cross-validation (expanding window, 4 folds): train 2019–2023, test = <b>2024 season</b>.</li>
-      <li><b>Interpretation</b> — SHAP (beeswarm + interactions): weather and circuit-cluster features both land in the top 5.</li>
-      <li><b>Deployment view</b> — a 3-class podium / scoring / no-points assignment under F1 quota constraints (3 + 7 + 10), presented in Power BI.</li>
+      <li><b>Group the circuits.</b> Classify and group Formula 1 circuits by their characteristics.</li>
+      <li><b>Compare models.</b> Compare the performance of models that predict a driver's points in each race.</li>
+      <li><b>Explain the factors.</b> Analyse and explain how much each factor contributes to a driver scoring points.</li>
     </ol>
-    <p class="thline">ข้อมูลดิบขนาดใหญ่ไม่ได้ commit ลง repo — README ของโปรเจกต์ระบุแหล่งดาวน์โหลดและวิธี reproduce ทั้งหมด รวมถึงสคริปต์ build weather_circuit.csv ที่ทำซ้ำได้จาก Open-Meteo</p>
+    <p class="thline">1) จำแนกและจัดกลุ่มสนามแข่งขันตามลักษณะเฉพาะ 2) เปรียบเทียบประสิทธิภาพตัวแบบพยากรณ์การได้คะแนนของนักขับในแต่ละรอบการแข่งขัน 3) วิเคราะห์และอธิบายความสำคัญของปัจจัยที่ส่งผลต่อการได้คะแนน</p>
+  </div>
+
+  <h2>How the analysis runs <span class="th">ขั้นตอนการวิเคราะห์</span></h2>
+  <div class="card">
+    <ol class="steps">
+      <li><b>Data —</b> results, grids, pit stops, qualifying and standings from the Ergast F1 API; race-day temperature, rain and wind from Open-Meteo, averaged over the actual race window; track characteristics from Pirelli Motorsport. 2019–2024, 2,559 race entries.</li>
+      <li><b>Features —</b> six groups: driver and team basics, experience and performance, race data, weather and race context, circuit physical characteristics, circuit technical characteristics. Cumulative variables are lagged, and only pre-race information is used, so post-race results cannot leak into the predictors.</li>
+      <li><b>Circuit clustering —</b> 128 circuits → Gower distance → hierarchical clustering → <b>5 clusters</b>, selected with cluster-validity indices. Cluster membership is added as a feature.</li>
+      <li><b>Modelling —</b> Random Forest vs <b>XGBoost</b>, evaluated with expanding-window time-series cross-validation (4 folds): train 2019–2023, test = <b>2024 season</b>.</li>
+      <li><b>Interpretation —</b> SHAP. The starting grid position has the highest influence, followed by the potential and past performance of the team and the driver; circuit type and weather have low influence.</li>
+    </ol>
+    <p class="thline">ข้อมูลดิบขนาดใหญ่ไม่ได้ commit ลงรีโป — README ของโปรเจกต์ระบุแหล่งดาวน์โหลด วิธีทำซ้ำ และสคริปต์ที่สร้างตารางอากาศขึ้นใหม่จาก Open-Meteo</p>
+  </div>
+
+  <h2>Extension <span class="th">ส่วนขยายในโค้ด</span></h2>
+  <div class="card">
+    <p>The code also contains a supplementary analysis that assigns a full race field to podium / scoring / no-points slots under F1's 3 + 7 + 10 quota. It appears in <code>code/02_modeling-v1.R</code> and <code>code/03_modeling-v2-quota-and-strict.R</code>; it is not the main research question.</p>
+    <p class="thline">โค้ดมีส่วนขยายที่จับคู่ผลทำนายทั้งสนามเข้ากับโควตาจริงของ F1 (โพเดียม 3 + ได้คะแนน 7 + ไม่ได้คะแนน 10) ซึ่งเป็นงานเสริม ไม่ใช่โจทย์หลักของงานวิจัย</p>
   </div>
 
   <div class="about">
-    <strong>About this page.</strong> This landing page presents the graduate project only —
-    the single project with a completed, reviewed final report.
-    Course projects (IBM attrition, Texas accident severity, Power BI dashboards) live in the
-    <a href="course-projects.html">โปรเจครายวิชา · Course projects</a> tab.
-    <br><span style="color:#7b8494">หน้านี้นำเสนอเฉพาะโปรเจคจบ — โปรเจครายวิชาอยู่ในแท็บ “โปรเจครายวิชา”</span>
+    <strong>About this page.</strong> This tab presents the graduate project only.
+    The course projects (IBM employee attrition, Texas accident severity, Power BI dashboards) are on the
+    <a href="course-projects.html">Course projects · โปรเจกต์รายวิชา</a> tab.
+    <br><span style="color:#7b8494">หน้านี้นำเสนอเฉพาะโปรเจกต์จบ ส่วนโปรเจกต์รายวิชาอยู่ในแท็บ “โปรเจกต์รายวิชา”</span>
   </div>
 
 </main>

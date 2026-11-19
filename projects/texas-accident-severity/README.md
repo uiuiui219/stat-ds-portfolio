@@ -2,7 +2,7 @@
 
 **STD 471 — Statistical Learning for Data Science II (final project)** · Predicting road-crash severity in San Antonio, Texas by combining unsupervised and supervised learning.
 
-> **โปรเจกต์รายวิชา STD 471** — ทำนายความรุนแรงของอุบัติเหตุทางถนนในเมืองซานอันโตนิโอ รัฐเท็กซัส ด้วยการผสม PCA + clustering (unsupervised) เข้ากับโมเดลทำนายแบบ supervised
+> **โปรเจกต์รายวิชา STD 471** — ทำนายความรุนแรงของอุบัติเหตุทางถนนในเมืองซานอันโตนิโอ รัฐเท็กซัส โดยใช้การวิเคราะห์องค์ประกอบหลักและการจัดกลุ่มข้อมูลร่วมกับตัวแบบจำแนก
 
 **Team:** ณภัทร เกียรติกอบลาภ · ธนวินท์ แสงวิสุทธิ์ · ปิยพัทธ์ จันทร์ทวี
 
@@ -39,7 +39,7 @@ Severity classes 1–2 were sampled at 20 %, classes 3–4 at 50 % (`set.seed(12
 3. **Interpretation** — variable importance / SHAP from the winning model.
 4. **Operational follow-up** — the three most common high-impact crash locations are picked and their **wait time** between incidents is estimated.
 
-## Result
+## Results
 
 The report carries an **asymmetric comparison of Random Forest, XGBoost and BART** under 5-fold CV (each model's precision/recall/F1/accuracy averages) and then runs SHAP variable-importance analysis on the XGBoost fit. Full numbers and plots: [`report/full-report.pdf`](report/full-report.pdf) — see also the [rendered HTML on the site](https://uiuiui219.github.io/stat-ds-portfolio/reports/texas-full-report.html).
 

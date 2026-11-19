@@ -73,11 +73,10 @@
 
 <nav class="tabs">
   <div class="wrap">
-    <a href="index.html">โปรเจคจบ · Graduate project</a>
-    <a href="f1-project-th.html">รายละเอียด F1 (ไทย)</a>
-    <a href="reports/ibm-full-report.html">รายงาน IBM (HTML)</a>
-    <a href="reports/texas-full-report.html">รายงาน Texas (HTML)</a>
-    <a href="course-projects.html" class="active">โปรเจครายวิชา · Course projects</a>
+    <a href="index.html">Graduate project · โปรเจกต์จบ</a>
+    <a href="f1-project.html">Project details (EN)</a>
+    <a href="f1-project-th.html">รายละเอียด (ไทย)</a>
+    <a href="course-projects.html" class="active">Course projects · โปรเจกต์รายวิชา</a>
   </div>
 </nav>
 
@@ -86,12 +85,12 @@
   <h2>Course projects <span class="th">โปรเจกต์ระหว่างเรียนรายวิชา</span></h2>
 
   <div class="about" style="border-color:#f0d7a8;background:#fffaef">
-    <strong>Disclaimer — โปรเจกต์การเรียนรู้ภาคปฏิบัติ</strong><br>
+    <strong>Disclaimer · ข้อชี้แจง</strong><br>
     These projects were built as hands-on exercises for specific courses and were assessed on
     applying the method, not on production readiness. Some points may therefore not fully follow
     best practice — for example simplified data cleaning, small samples, or model choices driven by
     the assignment's requirements. They are shared as evidence of coursework, with that caveat.
-    <br><span style="color:#7b8494">โปรเจกต์ในหน้านี้เป็นงานเรียนรู้ภาคปฏิบัติในรายวิชา จึงอาจมีบางจุดที่ไม่ถูกต้องตามหลักการหรือยังไม่ครบกระบวนการทางวิชาชีพ</span>
+    <br><span style="color:#7b8494">โปรเจกต์ในหน้านี้เป็นงานเรียนรู้ภาคปฏิบัติในรายวิชา จึงอาจมีบางจุดที่ยังไม่ครบตามหลักการหรือกระบวนการทางวิชาชีพ</span>
   </div>
 
   <div class="grid">
@@ -118,7 +117,7 @@
       <span class="kind">STD 471 · Statistical Learning II</span>
       <h3>Texas Road-Accident Severity</h3>
       <p>Severity prediction for crashes in San Antonio: PCA + k-means/EM clustering feeding an asymmetric comparison of Random Forest, XGBoost and BART (5-fold CV), with SHAP interpretation.</p>
-      <p class="thline">ทำนายความรุนแรงอุบัติเหตุทางถนนในซานอันโตนิโอ ผสม unsupervised + supervised learning เปรียบเทียบ 3 โมเดล</p>
+      <p class="thline">ทำนายความรุนแรงของอุบัติเหตุทางถนนในซานอันโตนิโอ โดยใช้การจัดกลุ่มข้อมูลร่วมกับตัวแบบจำแนก และเปรียบเทียบสามตัวแบบ</p>
       <div class="metrics">
         <span class="metric">Models compared<b>RF · XGBoost · BART</b></span>
         <span class="metric">Validation<b>5-fold CV</b></span>
@@ -138,7 +137,7 @@
     <div class="card">
       <span class="kind">CSS 475 · Business Intelligence</span>
       <h3>Power BI Dashboards</h3>
-      <p>A four-source BI final project (e-commerce, retail, telecom, entertainment): Power Query cleaning, star-schema model, DAX measures and interactive report pages.</p>
+      <p>A four-source BI report (e-commerce, retail, telecom, entertainment): Power Query cleaning, star-schema model, DAX measures and interactive report pages.</p>
       <p class="thline">แดชบอร์ด Power BI จาก 4 แหล่งข้อมูล พร้อมรายงานวิเคราะห์</p>
       <div class="chips">
         <span class="chip">DAX</span><span class="chip">Power Query</span>
@@ -155,18 +154,18 @@
   <h2>Tech stack <span class="th">เครื่องมือ</span></h2>
   <div class="chips">
     <span class="chip">R (tidyverse, caret, xgboost, BART, mclust, SHAP)</span>
-    <span class="chip">Python (pandas, scikit-learn)</span>
+    <span class="chip">Python (pandas, scikit-learn) — basic</span>
     <span class="chip">Power BI (DAX, Power Query)</span>
     <span class="chip">Excel</span>
+    <span class="chip">R Markdown</span>
     <span class="chip">Git / GitHub</span>
-    <span class="chip">RMarkdown</span>
   </div>
 
   <div class="about">
-    <strong>About this page.</strong> Every entry links to the full report and the code that produced it.
+    <strong>About this page.</strong> Each entry links to the full report and the code that produced it.
     Datasets over 10&nbsp;MB are documented with download sources in each project README instead of being committed.
-    The graduate project lives in the <a href="index.html">โปรเจคจบ · Graduate project</a> tab.
-    <br><span style="color:#7b8494">ทุกโปรเจกต์มีรายงานเต็มและโค้ดจริงกำกับ — ข้อมูลขนาดใหญ่มีลิงก์ดาวน์โหลดระบุใน README แต่ละโปรเจกต์ · โปรเจคจบอยู่ในแท็บแรก</span>
+    The graduate project lives in the <a href="index.html">Graduate project · โปรเจกต์จบ</a> tab.
+    <br><span style="color:#7b8494">ทุกโปรเจกต์มีรายงานฉบับเต็มและโค้ดที่ใช้ผลิตผลลัพธ์กำกับ ข้อมูลขนาดใหญ่ระบุแหล่งดาวน์โหลดไว้ใน README ของแต่ละโปรเจกต์ ส่วนโปรเจกต์จบอยู่ในแท็บแรก</span>
   </div>
 
 </main>
